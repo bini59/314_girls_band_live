@@ -57,6 +57,11 @@ enum TicketSaleMethod {
   FIRST_COME  // 선착
 }
 
+enum LiveStatus {
+  DRAFT
+  PUBLISHED
+}
+
 // =====================================================================
 // Series (시리즈/IP 묶음, optional)
 //   예) "러브라이브 시리즈", "아이마스 시리즈"
@@ -155,6 +160,8 @@ model Live {
   thumbnailUrl       String?   @map("thumbnail_url")
   ticketRestrictions String?   @map("ticket_restrictions") // 매수제한/본인확인 자유 텍스트
   notes              String?   // markdown
+  status             LiveStatus @default(DRAFT)
+  deletedAt          DateTime? @map("deleted_at")
 
   liveBands   LiveBand[]
   formats     LiveFormat[]
@@ -164,6 +171,8 @@ model Live {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([startAt])
+  @@index([status, startAt])
+  @@index([deletedAt])
   @@map("live")
 }
 
