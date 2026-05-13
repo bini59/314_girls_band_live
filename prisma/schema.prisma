@@ -1,0 +1,298 @@
+// =====================================================================
+// girls_band_live — 애니/게임 기반 걸즈밴드 라이브 일정 아카이브
+//
+// 모든 시각(*_at)은 UTC로 저장하고 표시할 때 Asia/Tokyo로 변환한다.
+//
+// 계층 구조:
+//   Series (시리즈/IP, optional)  예) 러브라이브, 아이마스
+//     └─ Work (작품, 필수)        예) 러브라이브!, 선샤인!!, 뱅드림, 걸즈밴드크라이
+//           └─ Band (밴드)        예) μ's, Aqours, MyGO!!!!!, 토게토게
+//                 └─ LiveBand ─── Live (공연 1건)
+//                                  ├─ LiveFormat (실황/LV/배포)
+//                                  │     └─ TicketTier (S석/스탠딩 등)
+//                                  └─ TicketSale (선행/일반/추첨/선착)
+//                                        ├─ Vendor (e+/로손/FC 등)
+//                                        └─ TicketSaleTier (라운드↔티어 N:M)
+// =====================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================================
+// Enums
+// =====================================================================
+
+enum LiveType {
+  SOLO    // 단독 (単独/ワンマン)
+  TAIBAN  // 대반 (対バン)
+  FES     // 페스 (フェス)
+}
+
+enum LiveFormatType {
+  LIVE_VENUE    // 현지 (現地)
+  LIVE_VIEWING  // 라이브뷰잉
+  STREAMING     // 배포 (配信)
+}
+
+enum TicketSaleType {
+  FC_SENKO            // FC 선행
+  OFFICIAL_SENKO      // 공식/아티스트 선행
+  PLAYGUIDE_SENKO     // 플레이가이드 선행
+  IPPAN               // 일반 발매
+  TOJITSU             // 당일권
+  LIVEVIEWING_SENKO   // LV 선행
+  LIVEVIEWING_IPPAN   // LV 일반
+  STREAMING_SALE      // 배포 티켓
+  OTHER
+}
+
+enum TicketSaleMethod {
+  LOTTERY     // 추첨
+  FIRST_COME  // 선착
+}
+
+// =====================================================================
+// Series (시리즈/IP 묶음, optional)
+//   예) "러브라이브 시리즈", "아이마스 시리즈"
+//   단일 작품 IP(뱅드림, 걸즈밴드크라이 등)에서는 Series 없이 Work만 두어도 됨.
+// =====================================================================
+
+model Series {
+  id      Int     @id @default(autoincrement())
+  slug    String  @unique
+  nameKo  String  @map("name_ko")
+  nameJp  String  @map("name_jp")
+  nameEn  String? @map("name_en")
+  logoUrl String? @map("logo_url")
+  description String?
+
+  works Work[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("series")
+}
+
+// =====================================================================
+// Work (작품)
+//   예) "러브라이브!", "러브라이브 선샤인!!", "뱅드림", "걸즈밴드 크라이"
+//   Band의 직접 부모.
+// =====================================================================
+
+model Work {
+  id          Int     @id @default(autoincrement())
+  seriesId    Int?    @map("series_id")            // 단일 작품 IP는 null 허용
+  slug        String  @unique
+  nameKo      String  @map("name_ko")
+  nameJp      String  @map("name_jp")
+  nameEn      String? @map("name_en")
+  kind        String? // "anime" | "game" | "media_mix" 등 자유 텍스트
+  logoUrl     String? @map("logo_url")
+  description String?
+
+  series Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  bands  Band[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([seriesId])
+  @@map("work")
+}
+
+// =====================================================================
+// Band (밴드)
+// =====================================================================
+
+model Band {
+  id          Int     @id @default(autoincrement())
+  workId      Int     @map("work_id")
+  slug        String  @unique
+  nameKo      String  @map("name_ko")
+  nameJp      String  @map("name_jp")
+  nameEn      String? @map("name_en")
+  officialUrl String? @map("official_url")
+  snsLinks    Json?   @map("sns_links") // {twitter, youtube, ...}
+  imageUrl    String? @map("image_url")
+  description String?
+
+  work      Work       @relation(fields: [workId], references: [id], onDelete: Restrict)
+  liveBands LiveBand[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workId])
+  @@map("band")
+}
+
+// =====================================================================
+// Live (공연 1건 — 실황+LV+배포가 같은 Live에 속함)
+// =====================================================================
+
+model Live {
+  id                 Int       @id @default(autoincrement())
+  slug               String    @unique
+  titleKo            String    @map("title_ko")
+  titleJp            String    @map("title_jp")
+  titleEn            String?   @map("title_en")
+  type               LiveType
+  startAt            DateTime  @map("start_at")           // 개연 (UTC)
+  doorsOpenAt        DateTime? @map("doors_open_at")      // 개장
+  endAt              DateTime? @map("end_at")             // 종료 추정
+  venueName          String    @map("venue_name")
+  venueAddress       String?   @map("venue_address")
+  venueUrl           String?   @map("venue_url")
+  officialUrls       Json?     @map("official_urls")      // string[]
+  posterUrl          String?   @map("poster_url")
+  thumbnailUrl       String?   @map("thumbnail_url")
+  ticketRestrictions String?   @map("ticket_restrictions") // 매수제한/본인확인 자유 텍스트
+  notes              String?   // markdown
+
+  liveBands   LiveBand[]
+  formats     LiveFormat[]
+  ticketSales TicketSale[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([startAt])
+  @@map("live")
+}
+
+// =====================================================================
+// LiveBand (Live ↔ Band N:M, 페스/대반)
+// =====================================================================
+
+model LiveBand {
+  liveId      Int     @map("live_id")
+  bandId      Int     @map("band_id")
+  isHeadliner Boolean @default(false) @map("is_headliner")
+  order       Int     @default(0)
+
+  live Live @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  band Band @relation(fields: [bandId], references: [id], onDelete: Restrict)
+
+  @@id([liveId, bandId])
+  @@index([bandId])
+  @@map("live_band")
+}
+
+// =====================================================================
+// LiveFormat (실황/LV/배포)
+//   — 항상 LIVE_VENUE 포맷 1개 이상 생성하는 컨벤션
+// =====================================================================
+
+model LiveFormat {
+  id        Int            @id @default(autoincrement())
+  liveId    Int            @map("live_id")
+  type      LiveFormatType
+  label     String?        // "전국 5관 LV", "ABEMA 배포" 등
+  venueName String?        @map("venue_name") // LV 극장명 (배포는 null)
+  url       String?
+
+  live  Live         @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  tiers TicketTier[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([liveId])
+  @@map("live_format")
+}
+
+// =====================================================================
+// TicketTier (좌석 등급/가격)
+// =====================================================================
+
+model TicketTier {
+  id       Int     @id @default(autoincrement())
+  formatId Int     @map("format_id")
+  name     String  // "S석 지정", "스탠딩", "VIP", "LV 일반석"
+  priceJpy Int     @map("price_jpy")
+  notes    String?
+  order    Int     @default(0)
+
+  format          LiveFormat       @relation(fields: [formatId], references: [id], onDelete: Cascade)
+  ticketSaleTiers TicketSaleTier[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([formatId])
+  @@map("ticket_tier")
+}
+
+// =====================================================================
+// Vendor (판매처: e+, 로손, FC 등)
+// =====================================================================
+
+model Vendor {
+  id      Int     @id @default(autoincrement())
+  slug    String  @unique
+  name    String
+  logoUrl String? @map("logo_url")
+  baseUrl String? @map("base_url")
+  notes   String?
+
+  ticketSales TicketSale[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("vendor")
+}
+
+// =====================================================================
+// TicketSale (판매/추첨 라운드)
+// =====================================================================
+
+model TicketSale {
+  id                Int              @id @default(autoincrement())
+  liveId            Int              @map("live_id")
+  vendorId          Int              @map("vendor_id")
+  type              TicketSaleType
+  method            TicketSaleMethod
+  label             String?          // "FC 最速先行" 등 자유 라벨
+  startsAt          DateTime         @map("starts_at")
+  endsAt            DateTime?        @map("ends_at")             // 선착은 마감 없을 수도
+  announceAt        DateTime?        @map("announce_at")         // 추첨 발표
+  paymentDeadlineAt DateTime?        @map("payment_deadline_at") // 입금 기한
+  url               String?
+  notes             String?
+
+  live   Live             @relation(fields: [liveId], references: [id], onDelete: Cascade)
+  vendor Vendor           @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  tiers  TicketSaleTier[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([liveId])
+  @@index([startsAt])
+  @@map("ticket_sale")
+}
+
+// =====================================================================
+// TicketSaleTier (TicketSale ↔ TicketTier N:M)
+//   — 이 라운드에서 살 수 있는 티어들
+// =====================================================================
+
+model TicketSaleTier {
+  saleId Int @map("sale_id")
+  tierId Int @map("tier_id")
+
+  sale TicketSale @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  tier TicketTier @relation(fields: [tierId], references: [id], onDelete: Cascade)
+
+  @@id([saleId, tierId])
+  @@index([tierId])
+  @@map("ticket_sale_tier")
+}

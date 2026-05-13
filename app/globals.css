@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+/* 디자인 토큰 — 색상은 OKLCH로 정의 (Tailwind v4 권장) */
+@theme {
+  --color-background: oklch(0.99 0 0);
+  --color-foreground: oklch(0.15 0 0);
+  --color-muted: oklch(0.96 0 0);
+  --color-muted-foreground: oklch(0.45 0 0);
+  --color-border: oklch(0.92 0 0);
+  --color-input: oklch(0.92 0 0);
+  --color-ring: oklch(0.65 0.18 264);
+
+  --color-primary: oklch(0.45 0.18 264);
+  --color-primary-foreground: oklch(0.99 0 0);
+
+  --color-destructive: oklch(0.55 0.22 25);
+  --color-destructive-foreground: oklch(0.99 0 0);
+
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Pretendard", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-background: oklch(0.14 0 0);
+    --color-foreground: oklch(0.98 0 0);
+    --color-muted: oklch(0.22 0 0);
+    --color-muted-foreground: oklch(0.65 0 0);
+    --color-border: oklch(0.28 0 0);
+    --color-input: oklch(0.28 0 0);
+    --color-ring: oklch(0.7 0.18 264);
+
+    --color-primary: oklch(0.75 0.18 264);
+    --color-primary-foreground: oklch(0.14 0 0);
+  }
+}
+
+html, body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+}
+
+body {
+  min-height: 100dvh;
+}
