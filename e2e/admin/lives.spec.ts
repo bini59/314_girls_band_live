@@ -1,20 +1,21 @@
 import { test, expect } from "@playwright/test";
+import { PrismaClient } from "@prisma/client";
 import { signInAsAdmin } from "../../test/helpers/auth";
 
 /**
- * 어드민 라이브 헤더 등록·편집·공개 E2E (RED — 구현 전).
+ * 어드민 라이브 헤더 등록·편집·공개 E2E.
  *
  * 시나리오:
  *   1. 빈 목록 진입
  *   2. + 새 라이브 → 헤더 등록 → 편집기로 redirect
  *   3. 편집기에서 자동저장 (800ms 디바운스)
- *   4. 공개 / 비공개 토글
+ *   4. LiveBand seed (게이트 충족용) → 공개 / 비공개 토글
  *   5. 목록으로 돌아가 표시 확인
  *   6. 로그아웃
  *
- * 본 사이클 가정:
+ * 가정:
  *  - DRAFT 라이브도 어드민 세션에서는 공개 페이지에서 보임 (UX_DECISIONS C1).
- *  - LiveBand 검증은 다음 사이클로 미룸. 헤더 필수 필드만으로 공개 가능.
+ *  - 공개 게이트는 헤더 필수 필드 + LiveBand >= 1. UI 가 없는 LiveBand 는 DB 시드.
  */
 
 const TS = String(Date.now());
@@ -97,8 +98,48 @@ test.describe("어드민 라이브 관리 — 헤더 등록·편집·공개", ()
       });
     }
 
-    // 8. 공개 버튼 클릭 → PUBLISHED 표시
-    await page.getByRole("button", { name: /공개|publish/i }).click();
+    // 8. 게이트 충족 — LiveBand 1건을 DB 에 직접 시드.
+    //    (LiveBand 관리 UI 는 다음 사이클까지 placeholder)
+    const liveIdMatch = page.url().match(/\/admin\/lives\/(\d+)$/);
+    if (!liveIdMatch) {
+      throw new Error("편집기 URL 에서 liveId 를 파싱하지 못함");
+    }
+    const liveId = Number(liveIdMatch[1]);
+    const prisma = new PrismaClient();
+    try {
+      const work = await prisma.work.upsert({
+        where: { slug: `e2e-work-${TS}` },
+        update: {},
+        create: {
+          slug: `e2e-work-${TS}`,
+          nameKo: "E2E 작품",
+          nameJp: "E2E Work",
+        },
+      });
+      const band = await prisma.band.upsert({
+        where: { slug: `e2e-band-${TS}` },
+        update: {},
+        create: {
+          slug: `e2e-band-${TS}`,
+          nameKo: "E2E 밴드",
+          nameJp: "E2E Band",
+          workId: work.id,
+        },
+      });
+      await prisma.liveBand.upsert({
+        where: { liveId_bandId: { liveId, bandId: band.id } },
+        update: {},
+        create: { liveId, bandId: band.id, isHeadliner: false, order: 0 },
+      });
+    } finally {
+      await prisma.$disconnect();
+    }
+
+    // page reload — 서버 컴포넌트가 최신 liveBand 카운트를 보도록.
+    await page.reload();
+
+    // 공개 버튼 클릭 → PUBLISHED 표시
+    await page.getByRole("button", { name: /^공개$/ }).click();
     await expect(page.getByText(/PUBLISHED/i)).toBeVisible();
 
     // 9. 비공개 토글

@@ -6,6 +6,7 @@ import { Prisma } from "@prisma/client";
 import { requireAdminSession } from "@/lib/auth/guard";
 import { fillDefaultTime, jstLocalToUtc } from "@/lib/admin/jst-datetime";
 import { liveHeaderUpdateSchema } from "@/lib/admin/schemas/live";
+import { prisma } from "@/lib/db";
 import {
   getLiveById,
   publishLive,
@@ -185,11 +186,12 @@ export async function updateLiveHeaderAction(
 /**
  * Server Action: 라이브 공개.
  *
- * 본 사이클 한정 가정 (TODO.md):
- *  - 헤더 필수 필드(titleKo / titleJp / type / startAt / venueName) 만 검증.
- *  - LiveBand 1개 이상 검증은 다음 사이클에서 활성화.
+ * 게이트:
+ *  - 헤더 필수 필드: titleKo / titleJp / type / startAt / venueName.
+ *  - LiveBand >= 1 (출연 밴드 최소 1개).
  *
- * TODO(cycle-C): LiveBand >= 1 검증 활성화.
+ * 게이트 실패 시 `gateFailures` 배열로 부족 항목을 반환한다.
+ * 상태는 변경되지 않는다.
  */
 export async function publishLiveAction(
   liveId: number
@@ -215,9 +217,12 @@ export async function publishLiveAction(
     gateFailures.push("venueName");
   }
 
-  // TODO(cycle-C): LiveBand >= 1 검증 활성화.
-  //   const bands = await prisma.liveBand.findMany({ where: { liveId } });
-  //   if (bands.length === 0) gateFailures.push("liveBand");
+  // LiveBand >= 1 게이트.
+  // count() 가 findMany() 보다 가볍다.
+  const liveBandCount = await prisma.liveBand.count({ where: { liveId } });
+  if (liveBandCount === 0) {
+    gateFailures.push("liveBand");
+  }
 
   if (gateFailures.length > 0) {
     return { ok: false, gateFailures };

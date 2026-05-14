@@ -7,6 +7,7 @@ import { requireAdminSession } from "@/lib/auth/guard";
 import { fillDefaultTime, jstLocalToUtc } from "@/lib/admin/jst-datetime";
 import { liveHeaderCreateSchema } from "@/lib/admin/schemas/live";
 import { createLive } from "@/lib/live/repo";
+import { ensureDefaultFormat } from "@/lib/live-format/repo";
 import { slugify } from "@/lib/slug";
 
 /**
@@ -131,6 +132,15 @@ export async function createLiveHeaderAction(
       data.venueUrl && data.venueUrl.length > 0 ? data.venueUrl : null,
     notes: data.notes && data.notes.length > 0 ? data.notes : null,
   });
+
+  // 기본 LIVE_VENUE 포맷을 자동 등록 (best-effort).
+  //   - 컨벤션상 Live 1건당 LIVE_VENUE 1개 이상이 있어야 한다.
+  //   - 실패해도 라이브 자체 생성은 성공으로 간주 (포맷은 어드민이 수동으로 추가 가능).
+  try {
+    await ensureDefaultFormat(created.id);
+  } catch (err) {
+    console.error("[createLiveHeaderAction:ensureDefaultFormat]", err);
+  }
 
   revalidatePath("/admin/lives");
   redirect(`/admin/lives/${created.id}`);
