@@ -99,7 +99,8 @@ function rowsToSnsLinks(rows: SnsRow[]): Record<string, string> {
   for (const r of rows) {
     const k = r.key.trim();
     const v = r.value.trim();
-    if (k.length === 0 && v.length === 0) continue;
+    // 키가 비어있으면 (값 유무와 무관하게) 무시 — 명시적 등록만 인정.
+    if (k.length === 0) continue;
     result[k] = v;
   }
   return result;

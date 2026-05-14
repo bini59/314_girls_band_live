@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/table";
 
 import type { BandWithWork } from "@/lib/band/repo";
+import { coerceSnsLinks } from "@/lib/admin/sns-links";
 
 import {
   createBandAction,
@@ -175,7 +176,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
           officialUrl: dialog.band.officialUrl ?? "",
           imageUrl: dialog.band.imageUrl ?? "",
           description: dialog.band.description ?? "",
-          snsLinks: (dialog.band.snsLinks ?? null) as Record<string, string> | null,
+          snsLinks: coerceSnsLinks(dialog.band.snsLinks),
         }
       : undefined;
 
@@ -240,9 +241,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
           </TableHeader>
           <TableBody>
             {filteredBands.map((b) => {
-              const sns = (b.snsLinks ?? null) as
-                | Record<string, string>
-                | null;
+              const sns = coerceSnsLinks(b.snsLinks);
               const snsKeys = sns ? Object.keys(sns) : [];
               return (
                 <TableRow key={b.id} data-testid={`band-row-${b.id}`}>
