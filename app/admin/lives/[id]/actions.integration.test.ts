@@ -1,14 +1,14 @@
 /**
- * `/admin/lives/[id]/actions.ts` 통합 테스트 (RED — 구현 전).
+ * `/admin/lives/[id]/actions.ts` 통합 테스트.
  *
  * 검증 대상:
  *  - updateLiveHeaderAction(liveId, input): partial update + 자동저장 응답 형식
- *  - publishLiveAction(liveId)  : DRAFT → PUBLISHED (헤더 게이트 검증)
+ *  - publishLiveAction(liveId)  : DRAFT → PUBLISHED (헤더 + LiveBand 게이트 검증)
  *  - unpublishLiveAction(liveId): PUBLISHED → DRAFT (무조건 성공)
  *
- * 본 사이클 한정 가정 (TODO.md):
- *  - publishLiveAction 의 게이트는 헤더 필수 필드만 검증 (LiveBand 검증 생략).
- *  - 다음 사이클에서 활성화 — TODO 주석으로 명시.
+ * 공개 게이트:
+ *  - 헤더 필수 필드: titleKo / titleJp / type / startAt / venueName
+ *  - LiveBand >= 1 (출연 밴드 최소 1개)
  *
  * 응답 형식:
  *  - update 성공: { ok: true, savedAt: ISO string }
@@ -30,6 +30,7 @@ import {
 
 import { resetDb, testDb, disconnectDb } from "@/test/helpers/db";
 import { createLive } from "@/test/factories/live";
+import { createBand } from "@/test/factories/band";
 import {
   cookieMocks,
   redirectMock,
@@ -39,6 +40,17 @@ import {
   resetAdminSessionMocks,
   TEST_JWT_SECRET,
 } from "@/test/helpers/admin-session";
+
+/**
+ * 게이트 통과를 위한 LiveBand 시드.
+ * 헬퍼가 없어 inline 처리한다. Band 1건을 만들고 liveBand 조인 row 를 생성.
+ */
+async function attachOneLiveBand(liveId: number): Promise<void> {
+  const band = await createBand();
+  await testDb.liveBand.create({
+    data: { liveId, bandId: band.id, isHeadliner: false, order: 0 },
+  });
+}
 
 vi.mock("next/headers", () => ({
   cookies: async () => cookieMocks.api,
@@ -178,8 +190,9 @@ describe("publishLiveAction", () => {
     await expect(publishLiveAction(1)).rejects.toThrow(/NEXT_REDIRECT/);
   });
 
-  it("헤더 필수 필드 모두 충족 + DRAFT → PUBLISHED 전환, { ok: true }", async () => {
+  it("헤더 필수 필드 모두 충족 + LiveBand >= 1 + DRAFT → PUBLISHED 전환, { ok: true }", async () => {
     const live = await createLive({ status: "DRAFT" });
+    await attachOneLiveBand(live.id);
 
     const { publishLiveAction } = await importActions();
     const result = await publishLiveAction(live.id);
@@ -191,6 +204,7 @@ describe("publishLiveAction", () => {
 
   it("venueName 빈값 → { ok: false, gateFailures: ['venueName'] }", async () => {
     const live = await createLive({ status: "DRAFT", venueName: "" });
+    await attachOneLiveBand(live.id);
     const { publishLiveAction } = await importActions();
     const result = await publishLiveAction(live.id);
 
@@ -205,6 +219,7 @@ describe("publishLiveAction", () => {
 
   it("titleEn 비어있어도 공개 가능 (optional)", async () => {
     const live = await createLive({ status: "DRAFT", titleEn: null });
+    await attachOneLiveBand(live.id);
     const { publishLiveAction } = await importActions();
     const result = await publishLiveAction(live.id);
     expect(result).toMatchObject({ ok: true });
@@ -212,20 +227,47 @@ describe("publishLiveAction", () => {
 
   it("성공 시 revalidatePath('/admin/lives') 호출", async () => {
     const live = await createLive({ status: "DRAFT" });
+    await attachOneLiveBand(live.id);
     const { publishLiveAction } = await importActions();
     await publishLiveAction(live.id);
     expect(revalidatePathMock).toHaveBeenCalledWith("/admin/lives");
   });
 
-  it("본 사이클 한정: LiveBand 없어도 공개 가능 (다음 사이클에서 활성화)", async () => {
-    // 본 사이클은 LiveBand 검증 생략 — 명시적 가정.
+  it("헤더 충족 + LiveBand 0건 → { ok: false, gateFailures: ['liveBand'] }, 상태 유지", async () => {
     const live = await createLive({ status: "DRAFT" });
-    const bands = await testDb.liveBand.findMany({ where: { liveId: live.id } });
+    const bands = await testDb.liveBand.findMany({
+      where: { liveId: live.id },
+    });
     expect(bands).toEqual([]);
 
     const { publishLiveAction } = await importActions();
     const result = await publishLiveAction(live.id);
-    expect(result).toMatchObject({ ok: true });
+
+    expect(result).toMatchObject({ ok: false });
+    expect((result as { gateFailures: string[] }).gateFailures).toContain(
+      "liveBand"
+    );
+
+    const reloaded = await testDb.live.findUnique({ where: { id: live.id } });
+    expect(reloaded!.status).toBe("DRAFT");
+  });
+
+  it("LiveBand 추가 후 공개 시도 → { ok: true }, PUBLISHED 로 전환", async () => {
+    const live = await createLive({ status: "DRAFT" });
+
+    // 1차: 게이트 실패 확인
+    const { publishLiveAction } = await importActions();
+    const fail = await publishLiveAction(live.id);
+    expect(fail).toMatchObject({ ok: false });
+
+    // LiveBand 추가 → 게이트 통과
+    await attachOneLiveBand(live.id);
+
+    const success = await publishLiveAction(live.id);
+    expect(success).toMatchObject({ ok: true });
+
+    const reloaded = await testDb.live.findUnique({ where: { id: live.id } });
+    expect(reloaded!.status).toBe("PUBLISHED");
   });
 });
 

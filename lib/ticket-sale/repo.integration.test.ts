@@ -98,7 +98,7 @@ describe("createTicketSale", () => {
         startsAt: new Date("2026-01-10T03:00:00Z"),
         tierIds: [tA.id, tB.id],
       })
-    ).rejects.toThrow(/본 라이브에 속하지 않는 티어/);
+    ).rejects.toThrow(/속하지 않는 티어/);
 
     // TicketSale row 가 남지 않음
     const sales = await testDb.ticketSale.findMany({

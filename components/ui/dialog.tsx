@@ -106,7 +106,7 @@ export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps
           prev.focus();
         }
       };
-    }, [open]);
+    }, [open, mounted]);
 
     // ESC + focus trap
     React.useEffect(() => {

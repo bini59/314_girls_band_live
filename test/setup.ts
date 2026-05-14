@@ -50,3 +50,20 @@ if (!process.env.TEST_DATABASE_URL) {
   );
 }
 process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
+
+// React Testing Library cleanup — 각 test 후 unmount + DOM 비움.
+// jsdom 환경의 component test 만 영향을 받는다 (node env 테스트는 무시).
+import { afterEach } from "vitest";
+try {
+  // @testing-library/react 가 설치돼 있으면 cleanup 등록.
+  // dynamic import 가 어려운 환경이라 require 사용.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const rtl = require("@testing-library/react") as { cleanup?: () => void };
+  if (typeof rtl.cleanup === "function") {
+    afterEach(() => {
+      rtl.cleanup?.();
+    });
+  }
+} catch {
+  // 설치되지 않은 환경(unit/integration only) 은 조용히 패스.
+}

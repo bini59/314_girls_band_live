@@ -240,6 +240,27 @@ describe("createLiveHeaderAction — 성공", () => {
     expect(all.map((l) => l.slug)).toEqual(["dup-slug", "dup-slug-2"]);
   });
 
+  it("createLive 후 기본 LIVE_VENUE LiveFormat 이 자동 생성된다", async () => {
+    const fd = makeFormData(VALID_FORM);
+    try {
+      await callCreate(undefined, fd);
+    } catch {
+      /* redirect */
+    }
+
+    const live = await testDb.live.findFirst();
+    expect(live).not.toBeNull();
+
+    const formats = await testDb.liveFormat.findMany({
+      where: { liveId: live!.id },
+    });
+    expect(formats.length).toBeGreaterThanOrEqual(1);
+    const venue = formats.find((f) => f.type === "LIVE_VENUE");
+    expect(venue).toBeDefined();
+    // venueName 은 Live.venueName 을 복사.
+    expect(venue!.venueName).toBe(VALID_FORM.venueName);
+  });
+
   it("doorsOpenAtJst 가 비어있는 date-only 입력은 fillDefaultTime 으로 18:00 부착", async () => {
     // 단순화: doorsOpenAtJst="2026-03-15" 만 전달 → 18:00 가 부착되어 startAt(18:00) 와 같아지므로
     // 검증 통과를 위해 doorsOpenAt 보다 startAt 을 늦게 잡음 (19:00).

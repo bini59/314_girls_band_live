@@ -1,6 +1,10 @@
 import { notFound } from "next/navigation";
 
 import { getLiveById } from "@/lib/live/repo";
+import { listLiveBands } from "@/lib/live-band/repo";
+import { listLiveFormats } from "@/lib/live-format/repo";
+import { listTicketSales } from "@/lib/ticket-sale/repo";
+import { listVendors } from "@/lib/vendors/repo";
 
 import { LiveEditorShell } from "./_components/LiveEditorShell";
 
@@ -13,8 +17,15 @@ export const metadata = {
 /**
  * 라이브 편집 페이지.
  *
- * - 헤더 자동저장 + 공개/비공개 토글.
- * - 다른 섹션(밴드/포맷/티어/라운드)은 다음 사이클.
+ * 한 번의 페이지 fetch 에서 nested 데이터까지 모두 가져온다:
+ *  - Live (헤더)
+ *  - LiveBand (출연 밴드)
+ *  - LiveFormat (포맷 + 티어 nested)
+ *  - TicketSale (판매 라운드 + vendor + tier 링크)
+ *  - Vendor (라운드 다이얼로그 의 발매처 셀렉트)
+ *
+ * 각 섹션은 자기 자신의 mutation 후 `revalidatePath('/admin/lives/{id}')`
+ * 를 호출하므로 Next.js 가 server fetch 를 재실행한다.
  */
 export default async function LiveEditPage({
   params,
@@ -32,5 +43,20 @@ export default async function LiveEditPage({
     notFound();
   }
 
-  return <LiveEditorShell live={live} />;
+  const [liveBands, liveFormats, ticketSales, vendors] = await Promise.all([
+    listLiveBands(liveId),
+    listLiveFormats(liveId),
+    listTicketSales(liveId),
+    listVendors(),
+  ]);
+
+  return (
+    <LiveEditorShell
+      live={live}
+      liveBands={liveBands}
+      liveFormats={liveFormats}
+      ticketSales={ticketSales}
+      vendors={vendors}
+    />
+  );
 }

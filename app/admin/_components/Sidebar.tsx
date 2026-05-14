@@ -20,7 +20,7 @@ const ITEMS: NavItem[] = [
   { label: "시리즈", disabled: true },
   { label: "작품", disabled: true },
   { label: "밴드", disabled: true },
-  { label: "판매처", disabled: true },
+  { label: "판매처", href: "/admin/vendors" },
 ];
 
 export function Sidebar() {
