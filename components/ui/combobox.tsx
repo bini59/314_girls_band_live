@@ -168,7 +168,7 @@ export function Combobox<T>({
         }}
         onKeyDown={handleKeyDown}
         className={cn(
-          "flex h-10 w-full rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-3 py-2 text-sm text-[color:var(--color-foreground)] outline-none transition-colors placeholder:text-[color:var(--color-muted-foreground)] focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] disabled:cursor-not-allowed disabled:opacity-60"
+          "flex h-10 w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-2 text-sm text-[color:var(--color-foreground)] outline-none transition-shadow placeholder:text-[color:var(--color-muted-foreground)] shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] disabled:cursor-not-allowed disabled:opacity-60"
         )}
       />
 
@@ -184,7 +184,7 @@ export function Combobox<T>({
         <ul
           id={listboxId}
           role="listbox"
-          className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] py-1 text-sm shadow-md"
+          className="absolute z-30 mt-1 max-h-64 w-full overflow-auto rounded-[var(--radius-lg)] bg-[color:var(--color-surface-2)] py-1 text-sm shadow-[var(--shadow-dialog)]"
         >
           {results.length === 0 && !loading ? (
             <li

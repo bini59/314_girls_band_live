@@ -23,23 +23,23 @@ export function SectionCard({
   tone = "default",
   className,
 }: SectionCardProps) {
-  const toneBorder =
+  const toneClass =
     tone === "warning"
-      ? "border-[color:var(--color-destructive)]"
-      : "border-[color:var(--color-border)]";
+      ? "ring-1 ring-[color:var(--color-destructive)]/50"
+      : "";
 
   return (
     <section
       data-tone={tone}
       className={cn(
-        "rounded-[var(--radius-lg)] border bg-[color:var(--color-background)] p-6 shadow-sm",
-        toneBorder,
+        "rounded-[var(--radius-lg)] bg-[color:var(--color-background)] p-6 transition-shadow hover:shadow-[var(--shadow-elevated)]",
+        toneClass,
         className
       )}
     >
       <header className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-1">
-          <h2 className="text-base font-semibold text-[color:var(--color-foreground)]">
+          <h2 className="text-lg font-bold tracking-tight text-[color:var(--color-foreground)]">
             {title}
           </h2>
           {description ? (

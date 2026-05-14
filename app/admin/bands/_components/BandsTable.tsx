@@ -3,11 +3,13 @@
 /**
  * BandsTable — 밴드 목록 + 추가/편집/삭제 + 작품 필터.
  *
+ *  - 추가/편집은 별도 상세 페이지(/admin/bands/new, /admin/bands/[id]/edit)로 이동.
  *  - 작품 필터: workId 셀렉트 → 클라이언트 측 필터링.
  *  - snsLinks 는 카드 형태로 키만 노출 (간략).
  */
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Work } from "@prisma/client";
 
@@ -25,26 +27,12 @@ import {
 import type { BandWithWork } from "@/lib/band/repo";
 import { coerceSnsLinks } from "@/lib/admin/sns-links";
 
-import {
-  createBandAction,
-  deleteBandAction,
-  updateBandAction,
-} from "../actions";
-
-import {
-  BandDialog,
-  type BandDialogInitial,
-} from "./BandDialog";
+import { deleteBandAction } from "../actions";
 
 export interface BandsTableProps {
   bands: BandWithWork[];
   works: Work[];
 }
-
-type DialogState =
-  | { open: false }
-  | { open: true; mode: "create" }
-  | { open: true; mode: "edit"; band: BandWithWork };
 
 const ALL_WORKS = "__all__";
 const DELETE_CONFIRM_MESSAGE =
@@ -52,7 +40,6 @@ const DELETE_CONFIRM_MESSAGE =
 
 export function BandsTable({ bands, works }: BandsTableProps) {
   const router = useRouter();
-  const [dialog, setDialog] = React.useState<DialogState>({ open: false });
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
     null
   );
@@ -64,87 +51,6 @@ export function BandsTable({ bands, works }: BandsTableProps) {
     const id = Number(filterWorkId);
     return bands.filter((b) => b.workId === id);
   }, [bands, filterWorkId]);
-
-  function openCreate() {
-    setTopError(null);
-    setDialog({ open: true, mode: "create" });
-  }
-
-  function openEdit(b: BandWithWork) {
-    setTopError(null);
-    setDialog({ open: true, mode: "edit", band: b });
-  }
-
-  function closeDialog() {
-    setDialog({ open: false });
-  }
-
-  async function handleSubmit(payload: {
-    workId: number | null;
-    slug: string;
-    nameKo: string;
-    nameJp: string;
-    nameEn: string;
-    officialUrl: string;
-    imageUrl: string;
-    description: string;
-    snsLinks: Record<string, string>;
-  }) {
-    if (!dialog.open) {
-      return { ok: false as const, error: "다이얼로그 상태 오류." };
-    }
-
-    if (payload.workId === null) {
-      return {
-        ok: false as const,
-        fieldErrors: { workId: ["작품을 선택해주세요."] },
-      };
-    }
-
-    if (dialog.mode === "create") {
-      const result = await createBandAction({
-        workId: payload.workId,
-        slug: payload.slug,
-        nameKo: payload.nameKo,
-        nameJp: payload.nameJp,
-        nameEn: payload.nameEn,
-        officialUrl: payload.officialUrl,
-        imageUrl: payload.imageUrl,
-        description: payload.description,
-        snsLinks: payload.snsLinks,
-      });
-      if (result.ok) {
-        router.refresh();
-        return { ok: true as const };
-      }
-      return {
-        ok: false as const,
-        error: result.error,
-        fieldErrors: result.fieldErrors,
-      };
-    }
-
-    const result = await updateBandAction(dialog.band.id, {
-      workId: payload.workId,
-      slug: payload.slug,
-      nameKo: payload.nameKo,
-      nameJp: payload.nameJp,
-      nameEn: payload.nameEn,
-      officialUrl: payload.officialUrl,
-      imageUrl: payload.imageUrl,
-      description: payload.description,
-      snsLinks: payload.snsLinks,
-    });
-    if (result.ok) {
-      router.refresh();
-      return { ok: true as const };
-    }
-    return {
-      ok: false as const,
-      error: result.error,
-      fieldErrors: result.fieldErrors,
-    };
-  }
 
   async function handleDelete(b: BandWithWork) {
     if (typeof window !== "undefined") {
@@ -164,21 +70,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
     }
   }
 
-  const initial: BandDialogInitial | undefined =
-    dialog.open && dialog.mode === "edit"
-      ? {
-          id: dialog.band.id,
-          workId: dialog.band.workId,
-          slug: dialog.band.slug,
-          nameKo: dialog.band.nameKo,
-          nameJp: dialog.band.nameJp,
-          nameEn: dialog.band.nameEn ?? "",
-          officialUrl: dialog.band.officialUrl ?? "",
-          imageUrl: dialog.band.imageUrl ?? "",
-          description: dialog.band.description ?? "",
-          snsLinks: coerceSnsLinks(dialog.band.snsLinks),
-        }
-      : undefined;
+  const addDisabled = works.length === 0;
 
   return (
     <div className="flex flex-col gap-3">
@@ -191,7 +83,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
             id="band-filter"
             value={filterWorkId}
             onChange={(e) => setFilterWorkId(e.target.value)}
-            className="flex h-9 rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-3 py-1 text-sm shadow-sm"
+            className="flex h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] outline-none"
           >
             <option value={ALL_WORKS}>전체 작품</option>
             {works.map((w) => (
@@ -201,15 +93,25 @@ export function BandsTable({ bands, works }: BandsTableProps) {
             ))}
           </select>
         </div>
-        <Button onClick={openCreate} disabled={works.length === 0}>
-          + 밴드 추가
-        </Button>
+        {addDisabled ? (
+          <Button disabled>+ 밴드 추가</Button>
+        ) : (
+          <Link
+            href="/admin/bands/new"
+            className="inline-flex h-9 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-4 text-sm font-bold tracking-[var(--tracking-button)] text-[color:var(--color-primary-foreground)] transition hover:brightness-110 hover:scale-[1.02]"
+          >
+            + 밴드 추가
+          </Link>
+        )}
       </div>
 
       {works.length === 0 ? (
-        <p className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted-foreground)]">
-          먼저 <a href="/admin/works" className="underline">작품</a>을 등록해주세요.
-          밴드는 작품에 속합니다.
+        <p className="rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] p-4 text-sm text-[color:var(--color-muted-foreground)]">
+          먼저{" "}
+          <a href="/admin/works" className="underline">
+            작품
+          </a>
+          을 등록해주세요. 밴드는 작품에 속합니다.
         </p>
       ) : null}
 
@@ -223,7 +125,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
       ) : null}
 
       {filteredBands.length === 0 ? (
-        <p className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
+        <p className="rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
           {bands.length === 0
             ? "등록된 밴드가 없습니다. 우측 상단 버튼으로 추가해주세요."
             : "해당 작품에 등록된 밴드가 없습니다."}
@@ -260,15 +162,13 @@ export function BandsTable({ bands, works }: BandsTableProps) {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEdit(b)}
+                      <Link
+                        href={`/admin/bands/${b.id}/edit`}
                         aria-label={`${b.nameKo} 편집`}
+                        className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-transparent px-4 text-xs font-bold tracking-[var(--tracking-button)] text-[color:var(--color-foreground)] transition hover:border-[color:var(--color-foreground)] hover:bg-[color:var(--color-muted)]"
                       >
                         편집
-                      </Button>
+                      </Link>
                       <Button
                         type="button"
                         variant="destructive"
@@ -287,17 +187,6 @@ export function BandsTable({ bands, works }: BandsTableProps) {
           </TableBody>
         </Table>
       )}
-
-      <BandDialog
-        open={dialog.open}
-        onOpenChange={(next) => {
-          if (!next) closeDialog();
-        }}
-        mode={dialog.open ? dialog.mode : "create"}
-        initial={initial}
-        works={works}
-        onSubmit={handleSubmit}
-      />
     </div>
   );
 }

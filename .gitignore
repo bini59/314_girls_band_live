@@ -55,3 +55,6 @@ docker/data/
 coverage/
 tmp/
 *.local
+
+# Claude Code runtime
+.claude/scheduled_tasks.lock

@@ -6,9 +6,9 @@ import { signInAsAdmin } from "../../test/helpers/auth";
  *
  * 시나리오:
  *   1. 사이드바에서 시리즈/작품/밴드 메뉴 활성화 확인
- *   2. 시리즈 신규 → 편집 → 삭제 (Work detach 동작은 SetNull 이라 자유)
- *   3. 작품 신규 (시리즈 셀렉트 포함) → 편집
- *   4. 밴드 신규 (작품 셀렉트 + snsLinks 1쌍) → 편집
+ *   2. 시리즈 신규 → 편집 → 삭제 (모달 UI 유지)
+ *   3. 작품 신규 (상세 페이지) → 편집 (상세 페이지)
+ *   4. 밴드 신규 (상세 페이지) → 편집 (상세 페이지)
  *   5. 밴드 보유 작품 삭제 시도 → 차단 메시지
  */
 
@@ -35,7 +35,7 @@ test.describe("어드민 마스터 데이터", () => {
   });
 
   test("시리즈 → 작품 → 밴드 신규/편집 + 삭제 차단", async ({ page }) => {
-    // 1) 시리즈 추가
+    // 1) 시리즈 추가 (모달)
     await page.goto("/admin/series");
     await expect(
       page.getByRole("heading", { name: "시리즈 관리" })
@@ -51,36 +51,39 @@ test.describe("어드민 마스터 데이터", () => {
       .click();
     await expect(page.getByText(SERIES_NAME_KO)).toBeVisible();
 
-    // 2) 작품 추가 (시리즈 셀렉트)
+    // 2) 작품 추가 (상세 페이지)
     await page.goto("/admin/works");
     await expect(
       page.getByRole("heading", { name: "작품 관리" })
     ).toBeVisible();
 
-    await page.getByRole("button", { name: /\+ 작품 추가/ }).click();
+    await page.getByRole("link", { name: /\+ 작품 추가/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "작품 추가" })
+    ).toBeVisible();
     await page.getByLabel("slug").fill(WORK_SLUG);
     await page.getByLabel("한국어 이름").fill(WORK_NAME_KO);
     await page.getByLabel("일본어 이름").fill("ラブライブ! E2E");
-    // 시리즈 셀렉트에 방금 만든 시리즈 노출
     await page
       .getByLabel("시리즈 (선택)")
       .selectOption({ label: new RegExp(SERIES_NAME_KO) });
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: /^저장$/ })
-      .click();
+    await page.getByRole("button", { name: /^저장$/ }).click();
+
+    await expect(page).toHaveURL(/\/admin\/works$/);
     await expect(page.getByText(WORK_NAME_KO)).toBeVisible();
-    // 시리즈 컬럼에 표시
     const workRow = page.getByText(WORK_NAME_KO).locator("..").locator("..");
     await expect(workRow).toContainText(SERIES_NAME_KO);
 
-    // 3) 밴드 추가 (작품 셀렉트 + snsLinks)
+    // 3) 밴드 추가 (상세 페이지)
     await page.goto("/admin/bands");
     await expect(
       page.getByRole("heading", { name: "밴드 관리" })
     ).toBeVisible();
 
-    await page.getByRole("button", { name: /\+ 밴드 추가/ }).click();
+    await page.getByRole("link", { name: /\+ 밴드 추가/ }).click();
+    await expect(
+      page.getByRole("heading", { name: "밴드 추가" })
+    ).toBeVisible();
     await page
       .getByLabel("작품")
       .selectOption({ label: new RegExp(WORK_NAME_KO) });
@@ -90,14 +93,11 @@ test.describe("어드민 마스터 데이터", () => {
 
     // SNS 추가 (추천 키 twitter)
     await page.getByRole("button", { name: /^\+ twitter$/ }).click();
-    await page
-      .getByLabel("SNS URL 1")
-      .fill("https://twitter.com/mygo_e2e");
+    await page.getByLabel("SNS URL 1").fill("https://twitter.com/mygo_e2e");
 
-    await page
-      .getByRole("dialog")
-      .getByRole("button", { name: /^저장$/ })
-      .click();
+    await page.getByRole("button", { name: /^저장$/ }).click();
+
+    await expect(page).toHaveURL(/\/admin\/bands$/);
     await expect(page.getByText(BAND_NAME_KO)).toBeVisible();
 
     // 4) 작품 삭제 시도 → 밴드가 있으므로 차단

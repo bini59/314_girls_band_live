@@ -1,29 +1,12 @@
 // @vitest-environment jsdom
 import * as React from "react";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
-const createMock = vi.fn();
-const updateMock = vi.fn();
 const deleteMock = vi.fn();
 const refreshMock = vi.fn();
 
 vi.mock("../actions", () => ({
-  createBandAction: (...args: unknown[]) => createMock(...args),
-  updateBandAction: (...args: unknown[]) => updateMock(...args),
   deleteBandAction: (...args: unknown[]) => deleteMock(...args),
 }));
 
@@ -73,8 +56,6 @@ function makeBand(overrides: Partial<BandWithWork> = {}): BandWithWork {
 }
 
 beforeEach(() => {
-  createMock.mockReset();
-  updateMock.mockReset();
   deleteMock.mockReset();
   refreshMock.mockReset();
 });
@@ -155,37 +136,24 @@ describe("BandsTable — 목록 + 필터", () => {
   });
 });
 
-describe("BandsTable — 추가/편집", () => {
-  it("+ 밴드 추가 → 다이얼로그 열림", async () => {
+describe("BandsTable — 추가/편집 링크", () => {
+  it("+ 밴드 추가 링크가 /admin/bands/new 로 이동", () => {
     const w = makeWork();
     render(<BandsTable bands={[]} works={[w]} />);
-    fireEvent.click(screen.getByRole("button", { name: /\+ 밴드 추가/ }));
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /밴드 추가/ })).toBeDefined();
-    });
+    const link = screen.getByRole("link", { name: /\+ 밴드 추가/ });
+    expect(link.getAttribute("href")).toBe("/admin/bands/new");
   });
 
-  it("편집 → initial prefill", async () => {
+  it("편집 링크가 /admin/bands/{id}/edit 로 이동", () => {
     const w = makeWork({ id: 5 });
     const b = makeBand({
       id: 7,
-      slug: "togenashi-togeari",
       nameKo: "토게나시 토게아리",
-      nameJp: "トゲナシトゲアリ",
       work: w,
     });
     render(<BandsTable bands={[b]} works={[w]} />);
-
-    fireEvent.click(
-      screen.getByRole("button", { name: /토게나시 토게아리 편집/ })
-    );
-
-    await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /밴드 편집/ })).toBeDefined();
-    });
-    expect((screen.getByLabelText("slug") as HTMLInputElement).value).toBe(
-      "togenashi-togeari"
-    );
+    const link = screen.getByRole("link", { name: /토게나시 토게아리 편집/ });
+    expect(link.getAttribute("href")).toBe("/admin/bands/7/edit");
   });
 });
 

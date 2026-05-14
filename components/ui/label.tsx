@@ -12,7 +12,7 @@ export const Label = React.forwardRef<
     <label
       ref={ref}
       className={cn(
-        "text-sm font-medium text-[color:var(--color-foreground)]",
+        "text-xs font-bold uppercase tracking-[var(--tracking-button)] text-[color:var(--color-muted-foreground)]",
         className
       )}
       {...props}

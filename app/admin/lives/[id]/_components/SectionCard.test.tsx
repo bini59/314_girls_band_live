@@ -34,7 +34,7 @@ describe("SectionCard", () => {
     expect(screen.getByRole("button", { name: "추가" })).toBeDefined();
   });
 
-  it("applies warning tone via data-tone", () => {
+  it("applies warning tone via data-tone (destructive ring)", () => {
     const { container } = render(
       <SectionCard title="t" tone="warning">
         <p>child</p>
@@ -45,7 +45,7 @@ describe("SectionCard", () => {
     expect(section?.className).toContain("--color-destructive");
   });
 
-  it("default tone uses border token", () => {
+  it("default tone uses background surface token", () => {
     const { container } = render(
       <SectionCard title="t">
         <p>child</p>
@@ -53,6 +53,6 @@ describe("SectionCard", () => {
     );
     const section = container.querySelector("section");
     expect(section?.getAttribute("data-tone")).toBe("default");
-    expect(section?.className).toContain("--color-border");
+    expect(section?.className).toContain("--color-background");
   });
 });

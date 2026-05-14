@@ -1,3 +1,11 @@
+/**
+ * Card — Spotify 영감 카드 컨테이너.
+ *
+ * 디자인 규칙 (.claude/DESIGN.md §4):
+ *   - 8px radius, 가시 보더 없음
+ *   - 배경은 surface (--color-background)
+ *   - 호버 시 옅은 elevation
+ */
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -10,7 +18,7 @@ export const Card = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] text-[color:var(--color-foreground)] shadow-sm",
+        "rounded-[var(--radius-lg)] bg-[color:var(--color-background)] text-[color:var(--color-foreground)] transition-shadow hover:shadow-[var(--shadow-elevated)]",
         className
       )}
       {...props}
@@ -38,7 +46,7 @@ export const CardTitle = React.forwardRef<
   return (
     <h3
       ref={ref}
-      className={cn("text-lg font-semibold leading-none", className)}
+      className={cn("text-lg font-bold leading-none", className)}
       {...props}
     />
   );

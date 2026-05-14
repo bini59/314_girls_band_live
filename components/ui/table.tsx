@@ -7,7 +7,7 @@ export const Table = React.forwardRef<
   React.HTMLAttributes<HTMLTableElement>
 >(function Table({ className, ...props }, ref) {
   return (
-    <div className="relative w-full overflow-auto">
+    <div className="relative w-full overflow-auto rounded-[var(--radius-lg)] bg-[color:var(--color-background)]">
       <table
         ref={ref}
         className={cn("w-full caption-bottom text-sm", className)}
@@ -25,7 +25,7 @@ export const TableHeader = React.forwardRef<
     <thead
       ref={ref}
       className={cn(
-        "border-b border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40",
+        "border-b border-[color:var(--color-border)] bg-[color:var(--color-muted)]",
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ export const TableRow = React.forwardRef<
     <tr
       ref={ref}
       className={cn(
-        "border-b border-[color:var(--color-border)] transition-colors hover:bg-[color:var(--color-muted)]/40",
+        "border-b border-[color:var(--color-border)] transition-colors last:border-0 hover:bg-[color:var(--color-muted)]",
         className
       )}
       {...props}
@@ -64,7 +64,7 @@ export const TableHead = React.forwardRef<
     <th
       ref={ref}
       className={cn(
-        "h-10 px-4 text-left align-middle font-medium text-[color:var(--color-muted-foreground)]",
+        "h-11 px-4 text-left align-middle text-xs font-bold uppercase tracking-[var(--tracking-button)] text-[color:var(--color-muted-foreground)]",
         className
       )}
       {...props}
@@ -79,7 +79,7 @@ export const TableCell = React.forwardRef<
   return (
     <td
       ref={ref}
-      className={cn("p-4 align-middle", className)}
+      className={cn("p-4 align-middle text-sm", className)}
       {...props}
     />
   );

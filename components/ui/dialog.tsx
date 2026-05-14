@@ -165,7 +165,7 @@ export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps
       <div
         data-testid="dialog-backdrop"
         onClick={handleBackdropClick}
-        className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 transition-opacity"
+        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 transition-opacity backdrop-blur-sm"
       >
         <div
           ref={setRefs}
@@ -175,7 +175,7 @@ export const DialogContent = React.forwardRef<HTMLDivElement, DialogContentProps
           aria-describedby={descriptionId}
           tabIndex={-1}
           className={cn(
-            "relative w-full max-w-lg rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] p-6 text-[color:var(--color-foreground)] shadow-lg outline-none",
+            "relative w-full max-w-lg rounded-[var(--radius-xl)] bg-[color:var(--color-surface-2)] p-6 text-[color:var(--color-foreground)] shadow-[var(--shadow-dialog)] outline-none",
             className
           )}
           {...props}
@@ -224,7 +224,7 @@ export const DialogTitle = React.forwardRef<
     <h2
       ref={ref}
       id={titleId}
-      className={cn("text-lg font-semibold leading-none", className)}
+      className={cn("text-xl font-bold leading-tight", className)}
       {...props}
     />
   );

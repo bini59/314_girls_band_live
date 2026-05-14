@@ -1,12 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 
 /**
- * 어드민 사이드바.
+ * 어드민 사이드바 — Spotify 네비 영감.
  *
- * 메뉴 5종 — 본 사이클은 라이브만 활성, 나머지(시리즈/작품/밴드/판매처) 는
- * 다음 사이클에서 추가. 비활성 항목은 회색으로 표시.
+ * Active: white text + 굵게 (font-bold), 좌측에 Spotify Green 인디케이터
+ * Inactive: silver text (--color-muted-foreground), hover시 surface bg
  */
 
 type NavItem = {
@@ -24,32 +27,46 @@ const ITEMS: NavItem[] = [
 ];
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
-    <aside className="hidden w-56 shrink-0 border-r border-[color:var(--color-border)] bg-[color:var(--color-muted)]/40 p-4 lg:block">
-      <nav aria-label="어드민 메뉴" className="flex flex-col gap-1">
+    <aside className="hidden w-56 shrink-0 bg-[color:var(--color-background)] p-3 lg:block">
+      <nav aria-label="어드민 메뉴" className="flex flex-col gap-0.5">
         {ITEMS.map((item) => {
           if (item.disabled) {
             return (
               <span
                 key={item.label}
-                className="cursor-not-allowed rounded-[var(--radius-md)] px-3 py-2 text-sm text-[color:var(--color-muted-foreground)] opacity-60"
+                className="cursor-not-allowed px-3 py-2 text-sm text-[color:var(--color-muted-foreground)] opacity-60"
                 aria-disabled
               >
                 {item.label}
-                <span className="ml-2 text-[10px] uppercase tracking-wide">
+                <span className="ml-2 text-[10px] uppercase tracking-[var(--tracking-button)]">
                   곧
                 </span>
               </span>
             );
           }
+
+          const active = pathname?.startsWith(item.href ?? "");
+
           return (
             <Link
               key={item.label}
               href={item.href ?? "#"}
               className={cn(
-                "rounded-[var(--radius-md)] px-3 py-2 text-sm font-medium text-[color:var(--color-foreground)] hover:bg-[color:var(--color-muted)]"
+                "relative rounded-[var(--radius-md)] px-3 py-2 text-sm transition-colors",
+                active
+                  ? "font-bold text-[color:var(--color-foreground)] bg-[color:var(--color-muted)]"
+                  : "font-medium text-[color:var(--color-muted-foreground)] hover:text-[color:var(--color-foreground)] hover:bg-[color:var(--color-muted)]"
               )}
             >
+              {active ? (
+                <span
+                  aria-hidden
+                  className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[color:var(--color-primary)]"
+                />
+              ) : null}
               {item.label}
             </Link>
           );

@@ -1,7 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 
 import { requireAdminSession } from "@/lib/auth/guard";
-import { listSeries } from "@/lib/series/repo";
 import { listWorks } from "@/lib/works/repo";
 
 import { WorksTable } from "./_components/WorksTable";
@@ -14,7 +13,7 @@ export const metadata = {
 
 export default async function AdminWorksPage() {
   await requireAdminSession();
-  const [works, series] = await Promise.all([listWorks(), listSeries()]);
+  const works = await listWorks();
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -30,7 +29,7 @@ export default async function AdminWorksPage() {
 
       <Card className="overflow-hidden">
         <CardContent className="p-4">
-          <WorksTable works={works} series={series} />
+          <WorksTable works={works} />
         </CardContent>
       </Card>
     </div>
