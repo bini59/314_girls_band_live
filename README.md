@@ -39,6 +39,31 @@ pnpm prisma:migrate   # 마이그레이션 실행 (최초 1회는 이름 입력)
 | `pnpm prisma:generate` | Prisma Client 재생성 |
 | `pnpm prisma:studio` | Prisma Studio (브라우저 DB 관리 UI) |
 
+## 어드민 dev 인증
+
+`/admin/login` 으로 어드민 로그인이 가능하려면 dev 서버에 `ADMIN_PASSWORD_HASH` + `JWT_SECRET` 환경변수가 필요합니다.
+
+**주의**: `.env` 또는 `.env.local` 에 bcrypt 해시(`$2a$...`)를 넣으면 Next.js 의 dotenv-expand 가 `$2a`, `$04$xxx` 같은 패턴을 변수 reference 로 해석해 값이 깨집니다. single-quote 도 안 통합니다. 다음 방법 중 하나를 사용하세요:
+
+```bash
+# 옵션 1: shell export 후 dev 시작
+export ADMIN_PASSWORD_HASH='$2a$12$your_hash_here'
+export JWT_SECRET='your_32_byte_hex_secret'
+pnpm dev
+
+# 옵션 2: inline env
+ADMIN_PASSWORD_HASH='$2a$12$your_hash' JWT_SECRET='secret' pnpm dev
+
+# 비밀번호 해시 생성
+pnpm tsx -e "import bcrypt from 'bcryptjs'; console.log(bcrypt.hashSync('YOUR_PASSWORD', 12))"
+# JWT_SECRET 생성
+openssl rand -hex 32
+```
+
+`.env` 파일에 그 두 키 자체를 두면 안 됩니다(주석 제외). 운영 배포에서는 외부 환경변수 주입 (Docker secret, K8s, Vercel env) 으로 처리합니다.
+
+E2E 테스트는 자동으로 `webServer.env` 에 자체 평문/해시 쌍을 주입하므로 별도 설정 불필요합니다.
+
 ## Endpoints (개발)
 
 | 서비스 | URL | 비고 |

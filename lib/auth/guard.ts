@@ -23,6 +23,12 @@ export async function requireAdminSession(): Promise<SessionPayload> {
   if (!session) {
     redirect(ADMIN_LOGIN_PATH);
   }
+  // Defense-in-depth (post-merge reco M3): verifySession 이 이미
+  // role !== "ADMIN" 인 페이로드를 null 로 반환하지만, 어드민 진입점에서
+  // 명시적으로 한 번 더 확인한다. 추후 role 이 늘어나도 안전한 기본값.
+  if (session.role !== "ADMIN") {
+    redirect(ADMIN_LOGIN_PATH);
+  }
   return session;
 }
 

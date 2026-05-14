@@ -32,7 +32,7 @@ test.describe("어드민 로그인", () => {
     await expect(page).toHaveURL(/\/admin\/login/);
   });
 
-  test("올바른 비밀번호 입력 시 /admin/lives 로 이동하고 placeholder 텍스트가 보인다", async ({
+  test("올바른 비밀번호 입력 시 /admin/lives 로 이동하고 어드민 셸이 보인다", async ({
     page,
     context,
   }) => {
@@ -40,8 +40,11 @@ test.describe("어드민 로그인", () => {
     await signInAsAdmin(page);
 
     await expect(page).toHaveURL(/\/admin\/lives$/);
-    // placeholder 문구 — 구현부와 합의된 문자열 (구현 예정)
-    await expect(page.getByText(/구현 예정/)).toBeVisible();
+    // 본 사이클에서 placeholder 페이지가 실제 라이브 목록 UI 로 대체되었다.
+    // "라이브 관리" 헤딩 또는 "+ 새 라이브" 버튼이 보이는지로 도착 검증.
+    await expect(
+      page.getByRole("heading", { name: /라이브 관리|라이브/ })
+    ).toBeVisible();
   });
 
   test("로그인 후 새로고침해도 /admin/lives 가 유지된다 (쿠키 영속성)", async ({
