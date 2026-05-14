@@ -639,3 +639,106 @@ describe("deleteTicketSaleAction", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/admin/lives");
   });
 });
+
+// ---------------------------------------------------------------------------
+// updateTicketSaleWithTiersAction — atomic update + tier 교체.
+// ---------------------------------------------------------------------------
+
+describe("updateTicketSaleWithTiersAction", () => {
+  beforeEach(async () => {
+    await mockAdminSession();
+  });
+
+  it("happy: 메타 + tier 모두 atomic 으로 교체", async () => {
+    const live = await createLive();
+    const fmt = await createLiveFormatRow(live.id);
+    const tier1 = await createTicketTierRow(fmt.id, { name: "A" });
+    const tier2 = await createTicketTierRow(fmt.id, { name: "B" });
+    const vendor = await createVendorRow();
+    const sale = await createTicketSaleRow(live.id, vendor.id, {
+      label: "원본",
+    });
+    await linkTicketSaleTier(sale.id, tier1.id);
+
+    const { updateTicketSaleWithTiersAction } = await importActions();
+    const result = await updateTicketSaleWithTiersAction(
+      sale.id,
+      { label: "변경" },
+      [tier2.id]
+    );
+    expect(result.ok).toBe(true);
+
+    const after = await testDb.ticketSale.findUnique({
+      where: { id: sale.id },
+      include: { tiers: true },
+    });
+    expect(after?.label).toBe("변경");
+    expect(after?.tiers.map((t) => t.tierId)).toEqual([tier2.id]);
+  });
+
+  it("cross-live tier 시도 → 전체 rollback (메타도 유지)", async () => {
+    const liveA = await createLive();
+    const liveB = await createLive();
+    const fmtA = await createLiveFormatRow(liveA.id);
+    const fmtB = await createLiveFormatRow(liveB.id);
+    const tierA = await createTicketTierRow(fmtA.id);
+    const tierB = await createTicketTierRow(fmtB.id);
+    const vendor = await createVendorRow();
+    const sale = await createTicketSaleRow(liveA.id, vendor.id, {
+      label: "원본",
+    });
+    await linkTicketSaleTier(sale.id, tierA.id);
+
+    const { updateTicketSaleWithTiersAction } = await importActions();
+    const result = await updateTicketSaleWithTiersAction(
+      sale.id,
+      { label: "변경" },
+      [tierA.id, tierB.id]
+    );
+    expect(result.ok).toBe(false);
+
+    // 메타도, tier 도 변하지 않음.
+    const after = await testDb.ticketSale.findUnique({
+      where: { id: sale.id },
+      include: { tiers: true },
+    });
+    expect(after?.label).toBe("원본");
+    expect(after?.tiers.map((t) => t.tierId)).toEqual([tierA.id]);
+  });
+
+  it("tierIds undefined → tier 는 손대지 않고 메타만 갱신", async () => {
+    const live = await createLive();
+    const fmt = await createLiveFormatRow(live.id);
+    const tier1 = await createTicketTierRow(fmt.id);
+    const vendor = await createVendorRow();
+    const sale = await createTicketSaleRow(live.id, vendor.id, {
+      label: "원본",
+    });
+    await linkTicketSaleTier(sale.id, tier1.id);
+
+    const { updateTicketSaleWithTiersAction } = await importActions();
+    const result = await updateTicketSaleWithTiersAction(
+      sale.id,
+      { label: "변경" },
+      undefined
+    );
+    expect(result.ok).toBe(true);
+
+    const after = await testDb.ticketSale.findUnique({
+      where: { id: sale.id },
+      include: { tiers: true },
+    });
+    expect(after?.label).toBe("변경");
+    expect(after?.tiers.map((t) => t.tierId)).toEqual([tier1.id]);
+  });
+
+  it("성공 시 revalidatePath 호출", async () => {
+    const live = await createLive();
+    const vendor = await createVendorRow();
+    const sale = await createTicketSaleRow(live.id, vendor.id);
+
+    const { updateTicketSaleWithTiersAction } = await importActions();
+    await updateTicketSaleWithTiersAction(sale.id, { label: "x" }, []);
+    expect(revalidatePathMock).toHaveBeenCalledWith("/admin/lives");
+  });
+});

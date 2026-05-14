@@ -17,12 +17,15 @@ import type { TierMultiSelectFormat } from "./TierMultiSelect";
 const createAction = vi.fn();
 const updateAction = vi.fn();
 const setTiersAction = vi.fn();
+const updateWithTiersAction = vi.fn();
 const deleteAction = vi.fn();
 
 vi.mock("../ticket-sale-actions", () => ({
   createTicketSaleAction: (...args: unknown[]) => createAction(...args),
   updateTicketSaleAction: (...args: unknown[]) => updateAction(...args),
   setTicketSaleTiersAction: (...args: unknown[]) => setTiersAction(...args),
+  updateTicketSaleWithTiersAction: (...args: unknown[]) =>
+    updateWithTiersAction(...args),
   deleteTicketSaleAction: (...args: unknown[]) => deleteAction(...args),
 }));
 
@@ -62,6 +65,7 @@ beforeEach(() => {
   createAction.mockReset();
   updateAction.mockReset();
   setTiersAction.mockReset();
+  updateWithTiersAction.mockReset();
   deleteAction.mockReset();
 });
 
@@ -176,7 +180,7 @@ describe("TicketSalesSection — 편집", () => {
 
   it("edit 실패 시 카드가 원래 상태로 롤백", async () => {
     const sale = makeSale({ id: 301, label: "원래" });
-    (updateAction as Mock).mockResolvedValueOnce({
+    (updateWithTiersAction as Mock).mockResolvedValueOnce({
       ok: false,
       error: "수정 실패",
     });

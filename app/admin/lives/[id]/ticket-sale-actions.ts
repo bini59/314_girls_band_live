@@ -37,6 +37,7 @@ import {
   getSaleLiveId,
   setTicketSaleTiers,
   updateTicketSale,
+  updateTicketSaleWithTiers,
   type UpdateTicketSalePatch,
 } from "@/lib/ticket-sale/repo";
 import { getLiveById } from "@/lib/live/repo";
@@ -470,6 +471,126 @@ export async function setTicketSaleTiersAction(
       return { ok: false, error: NOT_FOUND_SALE_MESSAGE };
     }
     return { ok: false, error: SET_TIERS_FAILURE_MESSAGE };
+  }
+
+  revalidatePath("/admin/lives");
+  return { ok: true };
+}
+
+// ---------------------------------------------------------------------------
+// updateTicketSaleWithTiersAction (atomic — code review HIGH 대응)
+// ---------------------------------------------------------------------------
+
+/**
+ * 메타 patch + tier 링크 교체를 단일 트랜잭션으로 수행.
+ *
+ * UI 에서 update + setTiers 를 두 번 호출하면 한쪽 실패 시 부분 커밋이 남는다.
+ * 본 액션은 두 변경을 atomic 으로 묶어 그 위험을 제거한다.
+ *
+ * `tierIds` 가 undefined 면 tier 링크는 손대지 않는다.
+ */
+export async function updateTicketSaleWithTiersAction(
+  saleId: number,
+  patch: Partial<TicketSaleFormInput>,
+  tierIds: number[] | undefined
+): Promise<TicketSaleActionResult> {
+  await requireAdminSession();
+
+  if (!isValidPositiveInt(saleId)) {
+    return { ok: false, error: INVALID_SALE_ID_MESSAGE };
+  }
+
+  const ownerLiveId = await getSaleLiveId(saleId);
+  if (ownerLiveId === null) {
+    return { ok: false, error: NOT_FOUND_SALE_MESSAGE };
+  }
+  const live = await getLiveById(ownerLiveId);
+  if (!live) {
+    return { ok: false, error: NOT_FOUND_LIVE_MESSAGE };
+  }
+
+  // patch 검증 (tierIds 는 별도 파라미터로 분리되어 schema 에서 제외).
+  const { tierIds: _ignored, ...rest } = patch;
+  void _ignored;
+  const normalized = normalizeJstFields(rest);
+  const candidate: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(normalized)) {
+    if (v === undefined) continue;
+    candidate[k] = v;
+  }
+  const parsed = ticketSaleUpdateSchema.safeParse(candidate);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      fieldErrors: parsed.error.flatten().fieldErrors,
+    };
+  }
+  const data = parsed.data;
+
+  const repoPatch: UpdateTicketSalePatch = {};
+  if (data.vendorId !== undefined) repoPatch.vendorId = data.vendorId;
+  if (data.type !== undefined) repoPatch.type = data.type;
+  if (data.method !== undefined) repoPatch.method = data.method;
+  if (data.label !== undefined) {
+    repoPatch.label = data.label.length === 0 ? null : data.label;
+  }
+  if (data.startsAtJst !== undefined && data.startsAtJst !== "") {
+    repoPatch.startsAt = jstLocalToUtc(data.startsAtJst);
+  }
+  if (data.endsAtJst !== undefined) {
+    repoPatch.endsAt =
+      data.endsAtJst === "" ? null : jstLocalToUtc(data.endsAtJst);
+  }
+  if (data.announceAtJst !== undefined) {
+    repoPatch.announceAt =
+      data.announceAtJst === "" ? null : jstLocalToUtc(data.announceAtJst);
+  }
+  if (data.paymentDeadlineAtJst !== undefined) {
+    repoPatch.paymentDeadlineAt =
+      data.paymentDeadlineAtJst === ""
+        ? null
+        : jstLocalToUtc(data.paymentDeadlineAtJst);
+  }
+  if (data.url !== undefined) {
+    repoPatch.url = data.url.length === 0 ? null : data.url;
+  }
+  if (data.notes !== undefined) {
+    repoPatch.notes = data.notes.length === 0 ? null : data.notes;
+  }
+
+  // tierIds 검증 (전달된 경우만).
+  let validatedTierIds: number[] | null = null;
+  if (tierIds !== undefined) {
+    const tierParsed = setTicketSaleTiersSchema.safeParse(tierIds);
+    if (!tierParsed.success) {
+      return {
+        ok: false,
+        fieldErrors: { tierIds: tierParsed.error.flatten().formErrors },
+      };
+    }
+    validatedTierIds = tierParsed.data;
+  }
+
+  try {
+    await updateTicketSaleWithTiers(saleId, repoPatch, validatedTierIds);
+  } catch (err) {
+    console.error("[updateTicketSaleWithTiersAction]", err);
+    if (isForeignTierError(err)) {
+      return {
+        ok: false,
+        fieldErrors: { tierIds: [FOREIGN_TIER_MESSAGE] },
+      };
+    }
+    if (isForeignKeyViolation(err)) {
+      return {
+        ok: false,
+        fieldErrors: { vendorId: [FOREIGN_VENDOR_MESSAGE] },
+      };
+    }
+    if (isNotFoundError(err)) {
+      return { ok: false, error: NOT_FOUND_SALE_MESSAGE };
+    }
+    return { ok: false, error: UPDATE_FAILURE_MESSAGE };
   }
 
   revalidatePath("/admin/lives");

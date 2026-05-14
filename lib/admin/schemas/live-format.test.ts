@@ -133,13 +133,17 @@ describe("liveFormatUpdateSchema — partial", () => {
     ).toBe(false);
   });
 
-  it("입력된 url 은 형식 검증", () => {
+  it("입력된 url 은 http(s) 만 허용", () => {
+    // ftp / javascript / data 모두 거부 (보안: XSS 방지).
     expect(
-      liveFormatUpdateSchema.safeParse({ url: "ftp://invalid" }).success
-    ).toBe(true); // ftp 도 valid url — 명세상 url() 만 통과
-    expect(
-      liveFormatUpdateSchema.safeParse({ url: "javascript-not-a-url" }).success
+      liveFormatUpdateSchema.safeParse({ url: "ftp://example.com" }).success
     ).toBe(false);
+    expect(
+      liveFormatUpdateSchema.safeParse({ url: "javascript:alert(1)" }).success
+    ).toBe(false);
+    expect(
+      liveFormatUpdateSchema.safeParse({ url: "https://example.com" }).success
+    ).toBe(true);
   });
 
   it("입력된 label 길이 검증", () => {

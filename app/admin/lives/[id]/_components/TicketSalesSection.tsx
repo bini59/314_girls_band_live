@@ -20,8 +20,7 @@ import { Button } from "@/components/ui/button";
 import {
   createTicketSaleAction,
   deleteTicketSaleAction,
-  setTicketSaleTiersAction,
-  updateTicketSaleAction,
+  updateTicketSaleWithTiersAction,
   type SerializedTicketSale,
   type TicketSaleFormInput,
   type TicketSaleActionResult,
@@ -127,28 +126,21 @@ export function TicketSalesSection({
     };
     setSales((prev) => prev.map((s) => (s.id === sale.id ? optimistic : s)));
 
-    // tierIds 가 기존과 다르면 setTicketSaleTiers 도 호출.
+    // tier 링크가 기존과 다른지. 다르면 동일 트랜잭션 안에서 교체.
     const before = [...sale.tiers.map((t) => t.id)].sort((a, b) => a - b);
     const after = [...(values.tierIds ?? [])].sort((a, b) => a - b);
     const tiersChanged =
       before.length !== after.length ||
       before.some((v, i) => v !== after[i]);
 
-    const updateResult = await updateTicketSaleAction(sale.id, values);
-    if (!updateResult.ok) {
+    const result = await updateTicketSaleWithTiersAction(
+      sale.id,
+      values,
+      tiersChanged ? values.tierIds ?? [] : undefined
+    );
+    if (!result.ok) {
       setSales((prev) => prev.map((s) => (s.id === sale.id ? original : s)));
-      return updateResult;
-    }
-
-    if (tiersChanged) {
-      const tierResult = await setTicketSaleTiersAction(
-        sale.id,
-        values.tierIds ?? []
-      );
-      if (!tierResult.ok) {
-        setSales((prev) => prev.map((s) => (s.id === sale.id ? original : s)));
-        return tierResult;
-      }
+      return result;
     }
 
     return { ok: true };

@@ -174,6 +174,64 @@ export async function updateTicketSale(
 }
 
 /**
+ * 메타 patch + tier 링크 교체를 단일 트랜잭션으로 수행.
+ *
+ * 사용 동기: UI 가 update + setTiers 를 순차 호출하면, 한쪽이 실패해도 다른
+ * 쪽 변경이 이미 커밋된 상태가 된다 (HIGH 리뷰 issue 대응).
+ *
+ * - cross-live tier 가드는 동일 트랜잭션 안에서 강제.
+ * - patch 가 비어 있으면 update 는 생략하고 tier 만 교체.
+ */
+export async function updateTicketSaleWithTiers(
+  saleId: number,
+  patch: UpdateTicketSalePatch,
+  tierIds: number[] | null
+): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const sale = await tx.ticketSale.findUnique({
+      where: { id: saleId },
+      select: { id: true, liveId: true },
+    });
+    if (!sale) {
+      throw new Error(`TicketSale(id=${saleId}) 를 찾을 수 없습니다.`);
+    }
+
+    if (Object.keys(patch).length > 0) {
+      await tx.ticketSale.update({
+        where: { id: saleId },
+        data: patch as Prisma.TicketSaleUncheckedUpdateInput,
+      });
+    }
+
+    if (tierIds !== null) {
+      if (tierIds.length > 0) {
+        const rows = await tx.ticketTier.findMany({
+          where: {
+            id: { in: tierIds },
+            format: { liveId: sale.liveId },
+          },
+          select: { id: true },
+        });
+        const matched = new Set(rows.map((r) => r.id));
+        for (const tierId of tierIds) {
+          if (!matched.has(tierId)) {
+            throw new Error(
+              `updateTicketSaleWithTiers: tierId=${tierId} 는 본 라이브(liveId=${sale.liveId}) 에 속하지 않는 티어입니다.`
+            );
+          }
+        }
+      }
+      await tx.ticketSaleTier.deleteMany({ where: { saleId } });
+      if (tierIds.length > 0) {
+        await tx.ticketSaleTier.createMany({
+          data: tierIds.map((tierId) => ({ saleId, tierId })),
+        });
+      }
+    }
+  });
+}
+
+/**
  * 라운드 삭제. TicketSaleTier cascade.
  */
 export async function deleteTicketSale(saleId: number): Promise<void> {

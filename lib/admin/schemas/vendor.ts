@@ -31,6 +31,7 @@ const baseVendorFields = z.object({
   baseUrl: z
     .string()
     .url("올바른 URL 이 아닙니다.")
+    .regex(/^https?:\/\//i, "http(s) URL 만 허용됩니다.")
     .max(500, "500자 이하로 입력해주세요.")
     .optional()
     .or(z.literal("")),
