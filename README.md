@@ -64,6 +64,54 @@ openssl rand -hex 32
 
 E2E 테스트는 자동으로 `webServer.env` 에 자체 평문/해시 쌍을 주입하므로 별도 설정 불필요합니다.
 
+## Production 배포 (로컬/Docker)
+
+`docker-compose.yml` 의 `app` 서비스(profile=app)가 production Next.js 컨테이너를 빌드/실행합니다.
+
+### 빠른 시작 (로컬에서 production 빌드 검증)
+
+```bash
+# 1. 비밀번호 해시 + JWT 시크릿 생성
+pnpm tsx -e "import bcrypt from 'bcryptjs'; console.log(bcrypt.hashSync('YOUR_PASSWORD', 12))"
+openssl rand -hex 32
+
+# 2. DB 가 떠 있는지 확인 (없으면 기동)
+pnpm db:up
+
+# 3. (최초 1회) 마이그레이션 적용 — 컨테이너에 prisma CLI 없음
+pnpm prisma:migrate:deploy
+
+# 4. 환경변수 inject 해서 app 컨테이너 빌드/기동
+ADMIN_PASSWORD_HASH='$2a$12$....hash..' \
+JWT_SECRET='....64hex..' \
+docker compose --profile app up -d --build app
+
+# 5. http://localhost:3001 로 접속 (APP_PORT 환경변수로 변경 가능)
+```
+
+### 환경별 시크릿 주입 패턴
+
+`.env*` 파일에 bcrypt 해시(`$2a$...`)를 두면 안 됩니다 (위 "어드민 dev 인증" 참조).
+다음 방법으로 process.env 에 직접 주입:
+
+| 환경 | 방법 |
+|---|---|
+| **Vercel / Railway / Cloudflare** | UI 의 환경변수 입력 — 가장 안전, expand 없음 |
+| **K8s** | `Secret` (stringData) → Pod envFrom |
+| **Docker run** | `-e ADMIN_PASSWORD_HASH='$2a$...'` (single-quote 로 셸 expand 차단) |
+| **Docker compose** | `environment: ADMIN_PASSWORD_HASH: ${VAR}` interpolation + 호스트 shell 에서 `export` |
+| **로컬 셸** | `export ADMIN_PASSWORD_HASH='...'` 후 `pnpm start` |
+
+compose 의 `${VAR}` 가 호스트 shell 변수를 참조하므로, CI/CD 에서는 그 shell 변수만 시크릿 매니저 (GitHub Actions secrets, Vault 등) 에서 주입하면 됩니다.
+
+### Dockerfile 노트
+
+- Multi-stage: `node:20-bookworm-slim` (Alpine 대신 — Prisma + OpenSSL 호환)
+- Next.js `output: "standalone"` 모드로 server.js + 필요한 node_modules 만 추출
+- `bcryptjs` 는 Server Action 안에서만 import 되어 trace 누락 → `outputFileTracingIncludes` 로 명시 포함
+- 비-root 유저 (nextjs:nodejs, uid 1001) 로 실행
+- **마이그레이션은 컨테이너에 포함하지 않음** — `pnpm prisma:migrate:deploy` 를 별도로 실행해야 함 (CI/CD step 또는 일회성 migrator 컨테이너)
+
 ## Endpoints (개발)
 
 | 서비스 | URL | 비고 |

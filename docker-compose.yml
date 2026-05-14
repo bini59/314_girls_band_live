@@ -32,6 +32,40 @@ services:
       postgres:
         condition: service_healthy
 
+  # ============================================================================
+  # 어드민 Next.js 앱 (production 빌드).
+  #
+  # 기본 `docker compose up -d` 에는 포함되지 않는다 (profile=app).
+  # 실행:  docker compose --profile app up -d --build app
+  #
+  # 환경변수 주입 패턴 (README "어드민 dev 인증" 참고):
+  #   - `.env` 파일에 ADMIN_PASSWORD_HASH / JWT_SECRET 를 두지 말 것
+  #     (Next.js dotenv-expand 가 `$` 를 변수 reference 로 해석해 값을 손상)
+  #   - 호스트 shell 의 환경변수를 ${VAR} interpolation 으로 끌어다 쓴다
+  #   - 또는 docker-compose 의 별도 .env (compose 만 보는 파일, app .env 와 별개)
+  # ============================================================================
+  app:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: girls-band-live:local
+    container_name: gbl-app
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3001}:3000"
+    environment:
+      # 컨테이너 내부에서 postgres 서비스 호스트네임으로 접근
+      DATABASE_URL: postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public
+      # 어드민 인증 — 반드시 호스트 shell 또는 secret store 에서 주입
+      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?must set ADMIN_PASSWORD_HASH (see README)}
+      JWT_SECRET: ${JWT_SECRET:?must set JWT_SECRET (>=32 bytes hex)}
+      NODE_ENV: production
+      TZ: Asia/Tokyo
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     name: gbl_postgres_data
