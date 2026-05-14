@@ -17,9 +17,9 @@ type NavItem = {
 
 const ITEMS: NavItem[] = [
   { label: "라이브", href: "/admin/lives" },
-  { label: "시리즈", disabled: true },
-  { label: "작품", disabled: true },
-  { label: "밴드", disabled: true },
+  { label: "시리즈", href: "/admin/series" },
+  { label: "작품", href: "/admin/works" },
+  { label: "밴드", href: "/admin/bands" },
   { label: "판매처", href: "/admin/vendors" },
 ];
 
