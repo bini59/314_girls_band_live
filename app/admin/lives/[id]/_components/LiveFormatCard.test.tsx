@@ -19,6 +19,7 @@ const baseFormat = {
   label: "전국 5관 LV",
   venueName: "TOHO 시네마즈",
   url: "https://example.com/lv",
+  tiers: [],
 };
 
 describe("LiveFormatCard", () => {
@@ -97,28 +98,34 @@ describe("LiveFormatCard", () => {
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
-  it("renders tierSlot when provided", () => {
+  it("format 에 id 가 있으면 TicketTiersSubSection 이 nested 렌더된다", () => {
     render(
       <LiveFormatCard
-        format={baseFormat}
+        format={{
+          ...baseFormat,
+          tiers: [
+            { id: 7, name: "S석", priceJpy: 9800, order: 0, notes: null },
+          ],
+        }}
         onEdit={() => {}}
         onDelete={async () => {}}
-        tierSlot={<div data-testid="tier-slot">TICKET TIERS</div>}
       />
     );
-    expect(screen.getByTestId("tier-slot")).toBeDefined();
-    expect(screen.getByText("TICKET TIERS")).toBeDefined();
+    expect(screen.getByText("티켓 티어")).toBeDefined();
+    expect(screen.getByDisplayValue("S석")).toBeDefined();
   });
 
-  it("does not render tierSlot when not provided", () => {
+  it("format.id 가 없는 신규(pending) 카드는 티어 sub-section 을 렌더하지 않음", () => {
+    const { id: _omit, ...pending } = baseFormat;
+    void _omit;
     render(
       <LiveFormatCard
-        format={baseFormat}
+        format={pending}
         onEdit={() => {}}
         onDelete={async () => {}}
       />
     );
-    expect(screen.queryByTestId("tier-slot")).toBeNull();
+    expect(screen.queryByText("티켓 티어")).toBeNull();
   });
 
   it("disables actions when disabled prop is true", () => {

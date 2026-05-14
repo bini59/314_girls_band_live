@@ -8,7 +8,6 @@ import { PublishGate } from "./PublishGate";
 import { LiveBandsSection } from "./LiveBandsSection";
 import { LiveFormatsSection } from "./LiveFormatsSection";
 import { TicketSalesSection } from "./TicketSalesSection";
-import { TicketTiersSubSection } from "./TicketTiersSubSection";
 
 import type { TierMultiSelectFormat } from "./TierMultiSelect";
 import type { SerializedTicketSale } from "../ticket-sale-actions";
@@ -89,13 +88,20 @@ export function LiveEditorShell({
     band: { nameKo: lb.band.nameKo, nameJp: lb.band.nameJp },
   }));
 
-  // 포맷 → LiveFormatLike 형태.
+  // 포맷 → LiveFormatLike 형태 (tiers 포함 — LiveFormatCard 가 nested 렌더).
   const initialFormats = liveFormats.map((f) => ({
     id: f.id,
     type: f.type,
     label: f.label,
     venueName: f.venueName,
     url: f.url,
+    tiers: f.tiers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      priceJpy: t.priceJpy,
+      order: t.order,
+      notes: t.notes,
+    })),
   }));
 
   // TicketSaleDialog 의 TierMultiSelect 후보 형태.
@@ -114,10 +120,6 @@ export function LiveEditorShell({
   );
 
   const initialSales = ticketSales.map(serializeSale);
-
-  // 포맷 id → 티어 초기값 매핑 (renderTierSlot 콜백에서 사용).
-  const tiersByFormat = new Map<number, LiveFormatRow["tiers"]>();
-  for (const f of liveFormats) tiersByFormat.set(f.id, f.tiers);
 
   return (
     <div className="mx-auto max-w-6xl p-6 lg:p-8">
@@ -153,21 +155,6 @@ export function LiveEditorShell({
           <LiveFormatsSection
             liveId={live.id}
             initialFormats={initialFormats}
-            renderTierSlot={(formatId) => {
-              const tiers = tiersByFormat.get(formatId) ?? [];
-              return (
-                <TicketTiersSubSection
-                  formatId={formatId}
-                  initialTiers={tiers.map((t) => ({
-                    id: t.id,
-                    name: t.name,
-                    priceJpy: t.priceJpy,
-                    order: t.order,
-                    notes: t.notes,
-                  }))}
-                />
-              );
-            }}
           />
 
           <TicketSalesSection

@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# girls_band_live pre-commit hook
+# 순서: typecheck → lint → vitest run.
+# 셋 중 하나라도 실패하면 commit 차단.
+# 우회 (정말 필요한 경우): git commit --no-verify
+
+set -e
+
+echo "▶ typecheck"
+pnpm typecheck
+
+echo "▶ lint"
+pnpm lint
+
+echo "▶ test"
+pnpm test:run

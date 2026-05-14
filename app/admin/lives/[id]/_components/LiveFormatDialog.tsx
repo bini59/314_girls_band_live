@@ -32,6 +32,15 @@ import type { LiveFormatActionResult } from "../live-format-actions";
 /** Prisma LiveFormatType 과 동일. import 회피 위해 별도 정의. */
 export type LiveFormatTypeValue = "LIVE_VENUE" | "LIVE_VIEWING" | "STREAMING";
 
+/** 단일 티어 row (TicketTiersSubSection 이 받는 모양과 동일). */
+export interface LiveFormatTierLike {
+  id: number;
+  name: string;
+  priceJpy: number;
+  order: number;
+  notes: string | null;
+}
+
 /** 입력 가능한 형태 (DB row 가 아니어도 됨). */
 export interface LiveFormatLike {
   id?: number;
@@ -39,6 +48,8 @@ export interface LiveFormatLike {
   label: string | null;
   venueName: string | null;
   url: string | null;
+  /** 카드 내부 nested 렌더용. 신규(create) 시점에는 빈 배열. */
+  tiers?: LiveFormatTierLike[];
 }
 
 export interface LiveFormatDialogValues {

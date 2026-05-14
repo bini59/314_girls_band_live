@@ -4,7 +4,8 @@
  * - useSectionList 로 낙관적 add/remove/replace 관리.
  * - "+ 포맷 추가" 버튼 → LiveFormatDialog (create mode).
  * - 각 카드의 편집 → Dialog (edit mode), 삭제 → 낙관 제거 후 실패 시 롤백.
- * - renderTierSlot(formatId) 로 Group 3 의 TicketTier 섹션을 카드 내부에 nest.
+ * - LiveFormatCard 가 format.tiers 데이터를 받아 자체적으로 TicketTiersSubSection
+ *   을 렌더한다. (renderTierSlot 함수 prop 은 RSC 호환을 위해 제거됨.)
  */
 "use client";
 
@@ -30,7 +31,6 @@ import {
 export interface LiveFormatsSectionProps {
   liveId: number;
   initialFormats: LiveFormatLike[];
-  renderTierSlot?: (formatId: number) => React.ReactNode;
 }
 
 const EMPTY_MESSAGE =
@@ -44,7 +44,6 @@ type DialogState =
 export function LiveFormatsSection({
   liveId,
   initialFormats,
-  renderTierSlot,
 }: LiveFormatsSectionProps) {
   const list = useSectionList<LiveFormatLike>(initialFormats, (f) =>
     f.id ?? "__pending__"
@@ -82,6 +81,7 @@ export function LiveFormatsSection({
         label: result.format.label,
         venueName: result.format.venueName,
         url: result.format.url,
+        tiers: [],
       });
     }
     return result;
@@ -166,11 +166,6 @@ export function LiveFormatsSection({
                   format={format}
                   onEdit={() => openEdit(format)}
                   onDelete={() => handleDelete(format)}
-                  tierSlot={
-                    renderTierSlot && format.id !== undefined
-                      ? renderTierSlot(format.id)
-                      : undefined
-                  }
                 />
               </li>
             );

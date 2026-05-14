@@ -215,11 +215,7 @@ describe("LiveFormatsSection", () => {
     });
   });
 
-  it("renderTierSlot is called per format", () => {
-    const slot = vi.fn((id: number) => (
-      <span data-testid={`slot-${id}`}>slot-{id}</span>
-    ));
-
+  it("각 format 의 tiers 데이터가 카드 안의 TicketTiersSubSection 으로 전달된다 (함수 prop 제거 — RSC 호환)", () => {
     render(
       <LiveFormatsSection
         liveId={1}
@@ -230,6 +226,9 @@ describe("LiveFormatsSection", () => {
             label: null,
             venueName: "A",
             url: null,
+            tiers: [
+              { id: 11, name: "S석", priceJpy: 9800, order: 0, notes: null },
+            ],
           },
           {
             id: 101,
@@ -237,15 +236,16 @@ describe("LiveFormatsSection", () => {
             label: null,
             venueName: "B",
             url: null,
+            tiers: [],
           },
         ]}
-        renderTierSlot={slot}
       />
     );
 
-    expect(slot).toHaveBeenCalledWith(100);
-    expect(slot).toHaveBeenCalledWith(101);
-    expect(screen.getByTestId("slot-100")).toBeDefined();
-    expect(screen.getByTestId("slot-101")).toBeDefined();
+    // 각 카드 안에 티어 sub-section 헤딩 ("티켓 티어") 이 렌더된다.
+    const tierHeadings = screen.getAllByText("티켓 티어");
+    expect(tierHeadings.length).toBe(2);
+    // 첫 번째 카드의 티어 이름이 보인다.
+    expect(screen.getByDisplayValue("S석")).toBeDefined();
   });
 });

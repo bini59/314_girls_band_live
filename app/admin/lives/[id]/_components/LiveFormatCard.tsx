@@ -4,9 +4,10 @@
  * - type 배지 (현지 공연 / 라이브뷰잉 / 배포).
  * - label / venueName / url 표시.
  * - 편집 / 삭제 액션 (삭제는 confirm 한 단계 거침).
- * - tierSlot prop 으로 TicketTier 섹션을 nested 렌더 (Group 3 가 채움).
+ * - format.tiers 데이터를 받아 카드 내부에 TicketTiersSubSection 직접 nested 렌더.
  *
- * Group 3 에서 본 파일은 수정하지 않으며, 본 컴포넌트의 tierSlot prop 만 사용한다.
+ * 함수 prop (tierSlot/renderTierSlot) 은 사용하지 않는다 — RSC → Client 경계를
+ * 넘는 함수 직렬화가 불가능하기 때문 (Next.js App Router 제약).
  */
 "use client";
 
@@ -16,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 import type { LiveFormatLike } from "./LiveFormatDialog";
+import { TicketTiersSubSection } from "./TicketTiersSubSection";
 
 const TYPE_LABEL: Record<LiveFormatLike["type"], string> = {
   LIVE_VENUE: "현지 공연",
@@ -31,7 +33,6 @@ export interface LiveFormatCardProps {
   onEdit: () => void;
   onDelete: () => Promise<void>;
   disabled?: boolean;
-  tierSlot?: React.ReactNode;
 }
 
 export function LiveFormatCard({
@@ -39,7 +40,6 @@ export function LiveFormatCard({
   onEdit,
   onDelete,
   disabled = false,
-  tierSlot,
 }: LiveFormatCardProps) {
   const [confirming, setConfirming] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
@@ -136,7 +136,14 @@ export function LiveFormatCard({
         </div>
       ) : null}
 
-      {tierSlot ? <div className="mt-4">{tierSlot}</div> : null}
+      {format.id !== undefined ? (
+        <div className="mt-4">
+          <TicketTiersSubSection
+            formatId={format.id}
+            initialTiers={format.tiers ?? []}
+          />
+        </div>
+      ) : null}
     </article>
   );
 }
