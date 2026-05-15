@@ -63,8 +63,8 @@ export function CalendarView({
   const next = month === 12 ? { y: year + 1, m: 1 } : { y: year, m: month + 1 };
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)]">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="min-w-0 rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)]">
         <header className="flex items-center justify-between border-b border-[color:var(--color-border)] px-4 py-3">
           <div className="flex items-center gap-2">
             <h2 className="text-lg font-semibold tabular-nums">
@@ -216,10 +216,10 @@ function MonthGrid({
                         TYPE_DOT[live.type] ?? "bg-[color:var(--color-foreground)]"
                       )}
                     />
-                    <span className="tabular-nums text-[color:var(--color-muted-foreground)]">
+                    <span className="shrink-0 tabular-nums text-[color:var(--color-muted-foreground)]">
                       {formatJstTime(new Date(live.startAt))}
                     </span>
-                    <span className="truncate font-medium">{live.titleKo}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">{live.titleKo}</span>
                   </button>
                 ))}
               </div>
@@ -320,10 +320,10 @@ function AgendaList({
                           TYPE_DOT[live.type] ?? "bg-[color:var(--color-foreground)]"
                         )}
                       />
-                      <span className="tabular-nums text-xs text-[color:var(--color-muted-foreground)]">
+                      <span className="shrink-0 tabular-nums text-xs text-[color:var(--color-muted-foreground)]">
                         {formatJstTime(new Date(live.startAt))}
                       </span>
-                      <span className="flex-1 truncate font-medium">
+                      <span className="min-w-0 flex-1 truncate font-medium">
                         {live.titleKo}
                       </span>
                     </button>

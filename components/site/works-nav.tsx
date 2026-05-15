@@ -1,46 +1,23 @@
-"use client";
-
 import Link from "next/link";
-import * as React from "react";
 
 import type { NavWork } from "@/lib/public/queries";
 import { cn } from "@/lib/utils";
 
 /**
- * 작품(Work) 메뉴 — Spotify pill 네비.
+ * 작품(Work) 데스크탑 메뉴 — Spotify pill 네비.
+ * hover/focus-within 시 하위 밴드 드롭다운.
  *
- * - 데스크탑: 가로 pill + hover/focus-within 드롭다운
- * - 모바일: 가로 스크롤 pill + 클릭 토글
+ * 모바일은 `<MobileMenu />` 가 별도로 담당.
  */
 export function WorksNav({ works }: { works: NavWork[] }) {
-  const [openId, setOpenId] = React.useState<number | null>(null);
-
   if (works.length === 0) return null;
 
   return (
-    <>
-      {/* 데스크탑 */}
-      <nav aria-label="작품" className="hidden md:flex md:items-stretch md:gap-1">
-        {works.map((work) => (
-          <WorkItem key={work.id} work={work} />
-        ))}
-      </nav>
-
-      {/* 모바일 */}
-      <nav
-        aria-label="작품 (모바일)"
-        className="-mx-3 flex w-[calc(100%+1.5rem)] gap-1.5 overflow-x-auto px-3 pb-1 md:hidden"
-      >
-        {works.map((work) => (
-          <MobileWorkItem
-            key={work.id}
-            work={work}
-            open={openId === work.id}
-            onToggle={() => setOpenId((id) => (id === work.id ? null : work.id))}
-          />
-        ))}
-      </nav>
-    </>
+    <nav aria-label="작품" className="flex items-stretch gap-1">
+      {works.map((work) => (
+        <WorkItem key={work.id} work={work} />
+      ))}
+    </nav>
   );
 }
 
@@ -88,53 +65,6 @@ function WorkItem({ work }: { work: NavWork }) {
               </Link>
             ))}
           </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function MobileWorkItem({
-  work,
-  open,
-  onToggle,
-}: {
-  work: NavWork;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  return (
-    <div className="shrink-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className={cn(
-          "inline-flex h-8 items-center rounded-full px-3 text-xs font-bold tracking-[var(--tracking-button)] transition",
-          open
-            ? "bg-[color:var(--color-foreground)] text-[color:var(--color-background)]"
-            : "bg-[color:var(--color-muted)] text-[color:var(--color-foreground)] hover:bg-[color:var(--color-surface-2)]"
-        )}
-      >
-        {work.nameKo}
-      </button>
-      {open && work.bands.length > 0 && (
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          <Link
-            href={`/works/${work.slug}`}
-            className="rounded-full bg-[color:var(--color-muted)] px-3 py-1 text-xs font-semibold"
-          >
-            전체
-          </Link>
-          {work.bands.map((band) => (
-            <Link
-              key={band.id}
-              href={`/bands/${band.slug}`}
-              className="rounded-full bg-[color:var(--color-muted)] px-3 py-1 text-xs"
-            >
-              {band.nameKo}
-            </Link>
-          ))}
         </div>
       )}
     </div>
