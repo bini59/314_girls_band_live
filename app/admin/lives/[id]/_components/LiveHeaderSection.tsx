@@ -12,6 +12,7 @@ import { utcToJstLocal } from "@/lib/admin/jst-datetime";
 import {
   LiveHeaderFields,
   type LiveHeaderFieldValues,
+  type TourOption,
 } from "../../_components/LiveHeaderFields";
 
 import {
@@ -29,7 +30,13 @@ import { AutoSaveIndicator } from "./AutoSaveIndicator";
  * - Server Action 응답을 컨트롤러 형식 ({ ok, savedAt } | { ok: false, error }) 으로 매핑.
  * - 컴포넌트 unmount 시 controller.dispose() 로 잔여 타이머/리스너 정리.
  */
-export function LiveHeaderSection({ live }: { live: Live }) {
+export function LiveHeaderSection({
+  live,
+  tours,
+}: {
+  live: Live;
+  tours: TourOption[];
+}) {
   // 초기 폼 상태는 서버에서 받은 Live 를 JST datetime-local 로 변환.
   const initial = useMemo<LiveHeaderFieldValues>(
     () => ({
@@ -47,6 +54,7 @@ export function LiveHeaderSection({ live }: { live: Live }) {
       thumbnailUrl: live.thumbnailUrl ?? "",
       slug: live.slug,
       notes: live.notes ?? "",
+      tourId: live.tourId,
     }),
     [live]
   );
@@ -133,6 +141,7 @@ export function LiveHeaderSection({ live }: { live: Live }) {
         onChange={setField}
         errors={fieldErrors}
         slugMode="optional"
+        tours={tours}
       />
     </section>
   );

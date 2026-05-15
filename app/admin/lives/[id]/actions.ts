@@ -47,6 +47,8 @@ export type UpdateLiveHeaderInput = Partial<{
   thumbnailUrl: string;
   slug: string;
   notes: string;
+  /** 투어 회차 매달기/풀기 (null = 단독 라이브). */
+  tourId: number | null;
 }>;
 
 const INVALID_LIVE_ID_MESSAGE = "유효하지 않은 라이브 ID 입니다.";
@@ -170,6 +172,7 @@ export async function updateLiveHeaderAction(
   if (data.notes !== undefined) {
     patch.notes = data.notes.length === 0 ? null : data.notes;
   }
+  if (data.tourId !== undefined) patch.tourId = data.tourId;
 
   try {
     await updateLive(liveId, patch);

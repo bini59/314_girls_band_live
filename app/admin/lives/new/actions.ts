@@ -46,6 +46,9 @@ export async function createLiveHeaderAction(
   const rawSlug = strOrUndefined(formData.get("slug"));
   const rawTitleEn = strOrUndefined(formData.get("titleEn"));
 
+  const rawTourId = strOrUndefined(formData.get("tourId"));
+  const tourIdParsed = parseTourId(rawTourId);
+
   const rawInput = {
     titleKo: strOrUndefined(formData.get("titleKo")) ?? "",
     titleJp: strOrUndefined(formData.get("titleJp")) ?? "",
@@ -70,6 +73,8 @@ export async function createLiveHeaderAction(
     thumbnailUrl: strOrUndefined(formData.get("thumbnailUrl")) ?? "",
     slug: rawSlug ?? "",
     notes: strOrUndefined(formData.get("notes")) ?? "",
+    // null 은 "투어 없음" 의도, undefined 는 schema 옵셔널로 통과
+    tourId: tourIdParsed,
   };
 
   // Zod 검증.
@@ -139,6 +144,7 @@ export async function createLiveHeaderAction(
         ? data.thumbnailUrl
         : null,
     notes: data.notes && data.notes.length > 0 ? data.notes : null,
+    tourId: data.tourId ?? null,
   });
 
   // 기본 LIVE_VENUE 포맷을 자동 등록 (best-effort).
@@ -158,6 +164,19 @@ export async function createLiveHeaderAction(
 function strOrUndefined(v: FormDataEntryValue | null): string | undefined {
   if (typeof v !== "string") return undefined;
   return v;
+}
+
+/**
+ * FormData 의 tourId 문자열을 number | null | undefined 로 정규화.
+ *  - undefined / `__null__` / `""` → null (투어 없음)
+ *  - 양의 정수 문자열 → number
+ *  - 그 외 (불량) → null (zod 에서 거르도록 안전 fallback)
+ */
+function parseTourId(v: string | undefined): number | null {
+  if (v === undefined || v === "" || v === "__null__") return null;
+  const n = Number(v);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
 }
 
 /**

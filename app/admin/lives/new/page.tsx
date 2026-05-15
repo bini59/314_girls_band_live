@@ -1,3 +1,5 @@
+import { listTours } from "@/lib/tours/repo";
+
 import NewLiveForm from "./NewLiveForm";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +13,14 @@ export const metadata = {
  *
  * 본 사이클은 헤더 필드만. 밴드/포맷/티어/라운드는 라이브 생성 후 편집기에서 추가.
  */
-export default function NewLivePage() {
+export default async function NewLivePage() {
+  const tours = await listTours();
+  const tourOptions = tours.map((t) => ({
+    id: t.id,
+    nameKo: t.nameKo,
+    workNameKo: t.work.nameKo,
+  }));
+
   return (
     <div className="mx-auto max-w-2xl p-6 lg:p-8">
       <header className="mb-6">
@@ -22,7 +31,7 @@ export default function NewLivePage() {
           헤더 정보를 입력하고 저장하면 편집기로 이동합니다.
         </p>
       </header>
-      <NewLiveForm />
+      <NewLiveForm tours={tourOptions} />
     </div>
   );
 }

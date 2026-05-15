@@ -22,6 +22,7 @@ const ITEMS: NavItem[] = [
   { label: "라이브", href: "/admin/lives" },
   { label: "시리즈", href: "/admin/series" },
   { label: "작품", href: "/admin/works" },
+  { label: "투어", href: "/admin/tours" },
   { label: "밴드", href: "/admin/bands" },
   { label: "판매처", href: "/admin/vendors" },
 ];
