@@ -8,12 +8,15 @@ import { cn } from "@/lib/utils";
  * 캘린더 구독 패널.
  *
  * - webcal://  → Apple/macOS/iOS, Samsung 캘린더 등 OS 표준 구독
- * - Google Calendar Add URL → https://calendar.google.com/calendar/u/0/r?cid=...
+ * - Google Calendar → "URL로 추가" 설정 페이지를 열고 URL을 자동 복사한다.
+ *   Google은 외부 iCal URL을 cid= 파라미터로 받지 않기 때문에 deep link 한 번 클릭으로
+ *   끝낼 수 없다. 사용자는 설정 페이지에서 복사된 URL을 붙여넣어 등록한다.
  * - .ics 다운로드 / 클립보드 복사 → Notion Calendar, Outlook 등
  */
 export function CalendarSubscribe({ feedPath }: { feedPath: string }) {
   const [origin, setOrigin] = React.useState<string>("");
   const [copied, setCopied] = React.useState(false);
+  const [googleHint, setGoogleHint] = React.useState(false);
 
   React.useEffect(() => {
     setOrigin(window.location.origin);
@@ -23,9 +26,8 @@ export function CalendarSubscribe({ feedPath }: { feedPath: string }) {
   const webcalUrl = origin
     ? `${origin.replace(/^https?:/, "webcal:")}${feedPath}`
     : "";
-  const googleUrl = httpsUrl
-    ? `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(httpsUrl)}`
-    : "";
+  const googleAddByUrl =
+    "https://calendar.google.com/calendar/u/0/r/settings/addbyurl";
 
   async function copy() {
     if (!httpsUrl) return;
@@ -36,6 +38,20 @@ export function CalendarSubscribe({ feedPath }: { feedPath: string }) {
     } catch {
       // ignore
     }
+  }
+
+  async function openGoogle(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (!httpsUrl) {
+      e.preventDefault();
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(httpsUrl);
+    } catch {
+      // 클립보드 차단 환경 — 아래 입력란에서 직접 복사 가능
+    }
+    setGoogleHint(true);
+    setTimeout(() => setGoogleHint(false), 4000);
   }
 
   return (
@@ -52,11 +68,13 @@ export function CalendarSubscribe({ feedPath }: { feedPath: string }) {
 
       <div className="grid grid-cols-2 gap-2">
         <SubBtn
-          href={googleUrl}
+          href={googleAddByUrl}
           target="_blank"
           rel="noopener noreferrer"
+          onClick={openGoogle}
+          disabled={!httpsUrl}
           label="Google"
-          hint="Google Calendar에 추가"
+          hint="URL 복사 후 설정 페이지 열기"
         />
         <SubBtn
           href={webcalUrl}
@@ -75,6 +93,16 @@ export function CalendarSubscribe({ feedPath }: { feedPath: string }) {
           hint=".ics 파일 다운로드"
         />
       </div>
+
+      {googleHint && (
+        <p
+          role="status"
+          className="mt-2 rounded-[var(--radius-sm)] bg-[color:var(--color-muted)] px-3 py-2 text-[11px] text-[color:var(--color-foreground)]"
+        >
+          URL을 복사했어요. 새로 열린 Google 캘린더의 “URL로 추가” 칸에
+          붙여넣고 “캘린더 추가”를 누르세요.
+        </p>
+      )}
 
       <div className="mt-3 flex items-center gap-2">
         <input
@@ -102,6 +130,8 @@ function SubBtn({
   target,
   rel,
   download,
+  onClick,
+  disabled,
 }: {
   href: string;
   label: string;
@@ -109,19 +139,23 @@ function SubBtn({
   target?: string;
   rel?: string;
   download?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
+  disabled?: boolean;
 }) {
+  const inactive = disabled || !href;
   return (
     <a
-      href={href || "#"}
+      href={inactive ? "#" : href}
       target={target}
       rel={rel}
       download={download}
-      aria-disabled={!href}
+      onClick={onClick}
+      aria-disabled={inactive}
       className={cn(
         "flex flex-col items-start gap-0.5 rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] px-3 py-2.5 text-left transition",
-        href
-          ? "hover:bg-[color:var(--color-surface-2)] hover:shadow-[var(--shadow-elevated)]"
-          : "cursor-not-allowed opacity-50"
+        inactive
+          ? "cursor-not-allowed opacity-50"
+          : "hover:bg-[color:var(--color-surface-2)] hover:shadow-[var(--shadow-elevated)]"
       )}
     >
       <span className="text-sm font-bold">{label}</span>
