@@ -29,6 +29,7 @@ const TABLES = [
   "live_format",
   "live_band",
   "live",
+  "tour",
   "band",
   "work",
   "series",

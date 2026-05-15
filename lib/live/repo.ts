@@ -34,6 +34,8 @@ export type CreateLiveInput = {
   posterUrl?: string | null;
   thumbnailUrl?: string | null;
   notes?: string | null;
+  /** Tour 회차일 때 매달릴 Tour id. 단독 라이브/페스는 null/undefined. */
+  tourId?: number | null;
 };
 
 /**
@@ -70,6 +72,7 @@ export async function createLive(input: CreateLiveInput): Promise<Live> {
           posterUrl: input.posterUrl ?? null,
           thumbnailUrl: input.thumbnailUrl ?? null,
           notes: input.notes ?? null,
+          tourId: input.tourId ?? null,
           status: "DRAFT",
         },
       });
@@ -163,6 +166,8 @@ export type UpdateLiveInput = Partial<{
   thumbnailUrl: string | null;
   slug: string;
   notes: string | null;
+  /** Tour 회차 매달기/풀기. null 로 명시하면 단독 라이브로 전환. */
+  tourId: number | null;
 }>;
 
 /**
