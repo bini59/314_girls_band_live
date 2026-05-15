@@ -43,6 +43,8 @@ export type UpdateLiveHeaderInput = Partial<{
   venueName: string;
   venueAddress: string;
   venueUrl: string;
+  posterUrl: string;
+  thumbnailUrl: string;
   slug: string;
   notes: string;
 }>;
@@ -156,6 +158,13 @@ export async function updateLiveHeaderAction(
   }
   if (data.venueUrl !== undefined) {
     patch.venueUrl = data.venueUrl.length === 0 ? null : data.venueUrl;
+  }
+  if (data.posterUrl !== undefined) {
+    patch.posterUrl = data.posterUrl.length === 0 ? null : data.posterUrl;
+  }
+  if (data.thumbnailUrl !== undefined) {
+    patch.thumbnailUrl =
+      data.thumbnailUrl.length === 0 ? null : data.thumbnailUrl;
   }
   if (data.slug !== undefined) patch.slug = data.slug;
   if (data.notes !== undefined) {

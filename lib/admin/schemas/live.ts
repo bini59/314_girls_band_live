@@ -82,6 +82,20 @@ const baseLiveFields = z.object({
   venueName: z.string().min(1, "필수 입력 항목입니다.").max(200),
   venueAddress: z.string().max(500).optional(),
   venueUrl: z.string().url("올바른 URL 이 아닙니다.").max(500).optional().or(z.literal("")),
+  posterUrl: z
+    .string()
+    .url("올바른 URL 이 아닙니다.")
+    .regex(/^https?:\/\//i, "http(s) URL 만 허용됩니다.")
+    .max(500, "500자 이하로 입력해주세요.")
+    .optional()
+    .or(z.literal("")),
+  thumbnailUrl: z
+    .string()
+    .url("올바른 URL 이 아닙니다.")
+    .regex(/^https?:\/\//i, "http(s) URL 만 허용됩니다.")
+    .max(500, "500자 이하로 입력해주세요.")
+    .optional()
+    .or(z.literal("")),
   slug: z.string().optional(),
   notes: z.string().max(10000).optional(),
 });

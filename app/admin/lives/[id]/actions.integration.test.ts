@@ -150,6 +150,46 @@ describe("updateLiveHeaderAction — 부분 업데이트", () => {
     expect(revalidatePathMock).toHaveBeenCalledWith("/admin/lives");
   });
 
+  it("posterUrl / thumbnailUrl 변경이 DB 에 반영된다", async () => {
+    const live = await createLive();
+    const { updateLiveHeaderAction } = await importActions();
+    const result = await updateLiveHeaderAction(live.id, {
+      posterUrl: "https://cdn.example.com/p.jpg",
+      thumbnailUrl: "https://cdn.example.com/t.jpg",
+    });
+    expect((result as { ok: boolean }).ok).toBe(true);
+
+    const reloaded = await testDb.live.findUnique({ where: { id: live.id } });
+    expect(reloaded!.posterUrl).toBe("https://cdn.example.com/p.jpg");
+    expect(reloaded!.thumbnailUrl).toBe("https://cdn.example.com/t.jpg");
+  });
+
+  it("posterUrl 을 빈 문자열로 보내면 null 로 클리어된다", async () => {
+    const live = await createLive();
+    await testDb.live.update({
+      where: { id: live.id },
+      data: { posterUrl: "https://cdn.example.com/p.jpg" },
+    });
+    const { updateLiveHeaderAction } = await importActions();
+    const result = await updateLiveHeaderAction(live.id, { posterUrl: "" });
+    expect((result as { ok: boolean }).ok).toBe(true);
+
+    const reloaded = await testDb.live.findUnique({ where: { id: live.id } });
+    expect(reloaded!.posterUrl).toBeNull();
+  });
+
+  it("posterUrl 에 불량 URL 을 보내면 fieldErrors 반환", async () => {
+    const live = await createLive();
+    const { updateLiveHeaderAction } = await importActions();
+    const result = await updateLiveHeaderAction(live.id, {
+      posterUrl: "javascript:alert(1)",
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(
+      (result as { fieldErrors: Record<string, unknown> }).fieldErrors
+    ).toHaveProperty("posterUrl");
+  });
+
   it("soft-deleted 라이브 update 시도 → { ok: false, error }", async () => {
     const live = await createLive();
     await testDb.live.update({

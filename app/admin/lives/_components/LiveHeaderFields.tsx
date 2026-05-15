@@ -2,6 +2,7 @@
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ThumbnailField } from "@/components/admin/ThumbnailField";
 
 /**
  * 라이브 헤더 폼 필드의 공용 controlled 컴포넌트.
@@ -29,6 +30,8 @@ export interface LiveHeaderFieldValues {
   venueName?: string;
   venueAddress?: string;
   venueUrl?: string;
+  posterUrl?: string;
+  thumbnailUrl?: string;
   slug?: string;
   notes?: string;
 }
@@ -176,6 +179,34 @@ export function LiveHeaderFields({
             : undefined
         }
       />
+
+      <fieldset className="md:col-span-2 flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-4">
+        <legend className="px-1 text-sm font-medium text-[color:var(--color-foreground)]">
+          섬네일
+        </legend>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <ThumbnailField
+            id="posterUrl"
+            name="posterUrl"
+            label="포스터 (세로형)"
+            value={values.posterUrl ?? ""}
+            onChange={(v) => onChange("posterUrl", v)}
+            error={errors.posterUrl?.[0]}
+            aspect="3/4"
+            hint="공식 키비주얼/포스터 URL."
+          />
+          <ThumbnailField
+            id="thumbnailUrl"
+            name="thumbnailUrl"
+            label="섬네일 (목록용)"
+            value={values.thumbnailUrl ?? ""}
+            onChange={(v) => onChange("thumbnailUrl", v)}
+            error={errors.thumbnailUrl?.[0]}
+            aspect="square"
+            hint="목록/카드에 노출할 작은 이미지."
+          />
+        </div>
+      </fieldset>
 
       {includeNotes ? (
         <div className="flex flex-col gap-1 md:col-span-2">
