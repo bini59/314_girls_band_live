@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
 
+# 같은 시점 다중 배포 차단. main 외에서는 트리거 자체가 안 됨.
 concurrency:
   group: deploy-main
   cancel-in-progress: false
@@ -13,6 +14,9 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # 1) 이미지 빌드/푸시는 GitHub-hosted (격리 VM, 무료, 빠른 캐시).
+  # ---------------------------------------------------------------------------
   build-and-push:
     name: Build & Push image to GHCR
     runs-on: ubuntu-latest
@@ -57,45 +61,49 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64
 
+  # ---------------------------------------------------------------------------
+  # 2) 실제 배포는 self-hosted runner (배포 서버 그 자체).
+  #
+  # 보안 가드:
+  #   - 이 잡은 `push: main` 이벤트에서만 트리거 (fork PR 트리거 불가).
+  #   - 아래 `if` 로 다시 한 번 검증 — 워크플로 트리거 설정이 잘못돼도 fork 코드 실행 차단.
+  #   - 러너는 `gbl-prod` 라벨로 등록 권장 (다른 self-hosted 러너와 분리).
+  # ---------------------------------------------------------------------------
   deploy:
-    name: Blue/Green deploy to server
+    name: Blue/Green deploy (self-hosted)
     needs: build-and-push
-    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, linux, gbl-prod]
     timeout-minutes: 15
     environment: production
+    permissions:
+      contents: read
+      packages: read
+    defaults:
+      run:
+        working-directory: ${{ vars.DEPLOY_PATH || '/opt/girls_band_live' }}
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: ${{ secrets.DEPLOY_PORT || 22 }}
-          script_stop: true
-          envs: GITHUB_SHA
-          script: |
-            set -euo pipefail
-            cd "${{ secrets.DEPLOY_PATH }}"
+      - name: Sync repository (fetch + reset to main)
+        run: |
+          git fetch origin main
+          git reset --hard origin/main
 
-            # 최신 docker-compose / nginx config / 배포 스크립트 동기화
-            git fetch origin main
-            git reset --hard origin/main
+      - name: Log in to GHCR (for image pull)
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-            # GHCR pull 권한 (없으면 한 번만 설정)
-            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
+      - name: Bootstrap nginx + postgres if not running
+        run: |
+          if ! docker compose ps --services --filter "status=running" | grep -q '^nginx$'; then
+            echo "Bootstrapping postgres + nginx + app-blue (first run)"
+            APP_IMAGE="ghcr.io/${{ github.repository }}:sha-${{ github.sha }}" \
+              docker compose --profile app up -d postgres nginx app-blue
+          fi
 
-            # postgres + nginx 가 살아 있는지 확인 — 없으면 부트스트랩
-            if ! docker compose ps --services --filter "status=running" | grep -q '^nginx$'; then
-              echo "Bootstrapping postgres + nginx + app-blue (first run)"
-              APP_IMAGE="ghcr.io/${{ github.repository }}:sha-${GITHUB_SHA}" \
-                docker compose --profile app up -d postgres nginx app-blue
-              # 첫 부트스트랩이면 blue 가 active 라서 일반 배포 스크립트는 green 으로 전환함
-            fi
+      - name: Blue/Green deploy
+        env:
+          IMAGE_TAG: sha-${{ github.sha }}
+          IMAGE_REPO: ghcr.io/${{ github.repository }}
+        run: ./scripts/deploy-blue-green.sh
 
-            # blue/green 배포 (스크립트 내부에서 prisma migrate 도 실행)
-            IMAGE_TAG="sha-${GITHUB_SHA}" \
-            IMAGE_REPO="ghcr.io/${{ github.repository }}" \
-              ./scripts/deploy-blue-green.sh
-
-            # 오래된 이미지 정리
-            docker image prune -f
+      - name: Cleanup old images
+        run: docker image prune -f
