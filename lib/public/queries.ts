@@ -88,6 +88,41 @@ export async function getLivesByBandSlug(bandSlug: string) {
   });
 }
 
+export async function getLivesByTourSlug(tourSlug: string) {
+  return prisma.live.findMany({
+    where: {
+      status: "PUBLISHED",
+      deletedAt: null,
+      tour: { slug: tourSlug, status: "PUBLISHED" },
+    },
+    orderBy: { startAt: "asc" },
+    select: LIVE_LIST_SELECT,
+  });
+}
+
+export async function getTourBySlug(slug: string) {
+  return prisma.tour.findUnique({
+    where: { slug },
+    select: {
+      id: true,
+      slug: true,
+      nameKo: true,
+      nameJp: true,
+      nameEn: true,
+      description: true,
+      posterUrl: true,
+      thumbnailUrl: true,
+      officialUrl: true,
+      startsAt: true,
+      endsAt: true,
+      status: true,
+      work: {
+        select: { slug: true, nameKo: true, nameJp: true },
+      },
+    },
+  });
+}
+
 export async function getWorkBySlug(slug: string) {
   return prisma.work.findUnique({
     where: { slug },
@@ -109,6 +144,19 @@ export async function getWorkBySlug(slug: string) {
           nameJp: true,
           imageUrl: true,
           description: true,
+        },
+      },
+      tours: {
+        where: { status: "PUBLISHED" },
+        orderBy: { startsAt: "asc" },
+        select: {
+          id: true,
+          slug: true,
+          nameKo: true,
+          nameJp: true,
+          startsAt: true,
+          endsAt: true,
+          thumbnailUrl: true,
         },
       },
     },
@@ -155,6 +203,14 @@ export async function getLiveBySlug(slug: string) {
       ticketRestrictions: true,
       notes: true,
       status: true,
+      tour: {
+        select: {
+          slug: true,
+          nameKo: true,
+          nameJp: true,
+          status: true,
+        },
+      },
       liveBands: {
         orderBy: { order: "asc" },
         select: {

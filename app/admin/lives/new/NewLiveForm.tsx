@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
   LiveHeaderFields,
   type LiveHeaderFieldValues,
+  type TourOption,
 } from "../_components/LiveHeaderFields";
 
 import {
@@ -43,9 +44,10 @@ const INITIAL_FORM: LiveHeaderFieldValues = {
   thumbnailUrl: "",
   slug: "",
   notes: "",
+  tourId: null,
 };
 
-export default function NewLiveForm() {
+export default function NewLiveForm({ tours }: { tours: TourOption[] }) {
   const [form, setForm] = useState<LiveHeaderFieldValues>(INITIAL_FORM);
   const [state, formAction, isPending] = useActionState<
     CreateLiveHeaderState,
@@ -69,6 +71,7 @@ export default function NewLiveForm() {
         errors={errors}
         slugMode="required"
         includeNotes
+        tours={tours}
       />
 
       {state?.ok === false && state.error ? (
