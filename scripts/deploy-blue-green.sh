@@ -85,18 +85,19 @@ docker tag "$FULL_IMAGE" girls-band-live:local
 
 # --- 3) Prisma migrate (앱 기동 전에 idempotent 하게 적용) ----------------------
 log "running prisma migrate deploy"
-# 일회성 마이그레이션 컨테이너:
-#   - root(-u 0:0): 이미지의 nextjs 유저 홈 디렉터리가 없어 npx 캐시(`~/.npm`) 쓰기 실패하는 문제 회피.
-#   - HOME=/tmp:    npx 가 패키지 캐시를 쓸 수 있는 쓰기 가능 경로 지정.
-#   - npx -y:       prompt 자동 수락. prisma 버전은 .env 또는 schema 로 결정.
-docker run --rm -u 0:0 \
-  --network "$(docker inspect gbl-postgres --format '{{range $k, $_ := .NetworkSettings.Networks}}{{$k}}{{end}}')" \
-  -e DATABASE_URL="postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public" \
+# 일회성 마이그레이션 — compose service 정의(app-blue)를 그대로 사용해
+# .env 의 DATABASE_URL/POSTGRES_PASSWORD 등이 정확히 주입되도록 한다.
+# (수동으로 docker run 하면 .env 가 로드되지 않아 인증 실패함)
+#   -u 0:0:   nextjs 유저 홈 디렉터리 부재로 npx 캐시 쓰기 실패하는 문제 회피.
+#   HOME=/tmp: npx 패키지 캐시 경로 지정.
+#   --no-deps: postgres 이미 떠 있으므로 의존성 재기동 방지.
+#   prisma schema 는 이미지 안 /app/prisma/schema.prisma 에 포함.
+APP_IMAGE="$FULL_IMAGE" docker compose --profile app run --rm --no-deps \
+  -u 0:0 \
   -e HOME=/tmp \
-  -v "$PWD/prisma:/prisma:ro" \
   --entrypoint sh \
-  "$FULL_IMAGE" \
-  -c "cd /tmp && npx -y prisma@5.22.0 migrate deploy --schema=/prisma/schema.prisma"
+  app-blue \
+  -c "cd /tmp && npx -y prisma@5.22.0 migrate deploy --schema=/app/prisma/schema.prisma"
 
 # --- 4) 새 색 기동 -------------------------------------------------------------
 log "starting app-$TARGET with new image"
