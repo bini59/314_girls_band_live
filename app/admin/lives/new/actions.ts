@@ -66,6 +66,8 @@ export async function createLiveHeaderAction(
     venueName: strOrUndefined(formData.get("venueName")) ?? "",
     venueAddress: strOrUndefined(formData.get("venueAddress")) ?? "",
     venueUrl: strOrUndefined(formData.get("venueUrl")) ?? "",
+    posterUrl: strOrUndefined(formData.get("posterUrl")) ?? "",
+    thumbnailUrl: strOrUndefined(formData.get("thumbnailUrl")) ?? "",
     slug: rawSlug ?? "",
     notes: strOrUndefined(formData.get("notes")) ?? "",
   };
@@ -130,6 +132,12 @@ export async function createLiveHeaderAction(
         : null,
     venueUrl:
       data.venueUrl && data.venueUrl.length > 0 ? data.venueUrl : null,
+    posterUrl:
+      data.posterUrl && data.posterUrl.length > 0 ? data.posterUrl : null,
+    thumbnailUrl:
+      data.thumbnailUrl && data.thumbnailUrl.length > 0
+        ? data.thumbnailUrl
+        : null,
     notes: data.notes && data.notes.length > 0 ? data.notes : null,
   });
 

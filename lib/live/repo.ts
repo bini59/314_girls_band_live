@@ -31,6 +31,8 @@ export type CreateLiveInput = {
   venueName: string;
   venueAddress?: string | null;
   venueUrl?: string | null;
+  posterUrl?: string | null;
+  thumbnailUrl?: string | null;
   notes?: string | null;
 };
 
@@ -65,6 +67,8 @@ export async function createLive(input: CreateLiveInput): Promise<Live> {
           venueName: input.venueName,
           venueAddress: input.venueAddress ?? null,
           venueUrl: input.venueUrl ?? null,
+          posterUrl: input.posterUrl ?? null,
+          thumbnailUrl: input.thumbnailUrl ?? null,
           notes: input.notes ?? null,
           status: "DRAFT",
         },
@@ -155,6 +159,8 @@ export type UpdateLiveInput = Partial<{
   venueName: string;
   venueAddress: string | null;
   venueUrl: string | null;
+  posterUrl: string | null;
+  thumbnailUrl: string | null;
   slug: string;
   notes: string | null;
 }>;

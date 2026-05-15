@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ThumbnailField } from "@/components/admin/ThumbnailField";
 
 import { bandCreateSchema, bandUpdateSchema } from "@/lib/admin/schemas/band";
 
@@ -282,20 +283,22 @@ export function BandForm({ mode, bandId, initial, works }: BandFormProps) {
         />
       </Field>
 
-      <Field
-        id="band-imageUrl"
-        label="이미지 URL (선택)"
-        error={fieldErrors.imageUrl?.[0]}
-      >
-        <Input
+      <fieldset className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-4">
+        <legend className="px-1 text-sm font-medium text-[color:var(--color-foreground)]">
+          섬네일
+        </legend>
+        <ThumbnailField
           id="band-imageUrl"
           name="imageUrl"
-          type="url"
+          label="이미지 URL (선택)"
           value={values.imageUrl}
-          onChange={(e) => update("imageUrl", e.target.value)}
+          onChange={(v) => update("imageUrl", v)}
+          error={fieldErrors.imageUrl?.[0]}
           disabled={pending}
+          aspect="square"
+          hint="밴드 대표 이미지 (정사각 권장)."
         />
-      </Field>
+      </fieldset>
 
       <SnsLinksField
         rows={values.snsRows}

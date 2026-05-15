@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { ThumbnailField } from "@/components/admin/ThumbnailField";
 
 import { workCreateSchema, workUpdateSchema } from "@/lib/admin/schemas/work";
 
@@ -216,21 +217,22 @@ export function WorkForm({ mode, workId, initial, series }: WorkFormProps) {
         />
       </Field>
 
-      <Field
-        id="work-logoUrl"
-        label="로고 URL (선택)"
-        error={fieldErrors.logoUrl?.[0]}
-      >
-        <Input
+      <fieldset className="flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-4">
+        <legend className="px-1 text-sm font-medium text-[color:var(--color-foreground)]">
+          섬네일
+        </legend>
+        <ThumbnailField
           id="work-logoUrl"
           name="logoUrl"
-          type="url"
+          label="로고 URL (선택)"
           value={values.logoUrl}
-          onChange={(e) => update("logoUrl", e.target.value)}
+          onChange={(v) => update("logoUrl", v)}
+          error={fieldErrors.logoUrl?.[0]}
           disabled={pending}
-          placeholder="https://..."
+          aspect="16/9"
+          hint="작품 로고/키비주얼."
         />
-      </Field>
+      </fieldset>
 
       <Field
         id="work-description"

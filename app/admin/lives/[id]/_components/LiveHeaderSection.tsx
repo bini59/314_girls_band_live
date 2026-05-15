@@ -43,6 +43,8 @@ export function LiveHeaderSection({ live }: { live: Live }) {
       venueName: live.venueName,
       venueAddress: live.venueAddress ?? "",
       venueUrl: live.venueUrl ?? "",
+      posterUrl: live.posterUrl ?? "",
+      thumbnailUrl: live.thumbnailUrl ?? "",
       slug: live.slug,
       notes: live.notes ?? "",
     }),

@@ -39,6 +39,8 @@ const INITIAL_FORM: LiveHeaderFieldValues = {
   venueName: "",
   venueAddress: "",
   venueUrl: "",
+  posterUrl: "",
+  thumbnailUrl: "",
   slug: "",
   notes: "",
 };
