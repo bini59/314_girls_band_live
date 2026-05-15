@@ -29,6 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up QEMU (multi-arch emulation)
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -59,7 +64,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          platforms: linux/amd64
+          # 멀티 아키텍처 — amd64 (개발/일반 서버) + arm64 (예: Raspberry Pi, Ampere, Apple Silicon).
+          # 배포 서버 아키텍처가 한 가지로 고정되면 그 하나만 남겨 빌드 시간을 줄여도 된다.
+          platforms: linux/amd64,linux/arm64
 
   # ---------------------------------------------------------------------------
   # 2) 실제 배포는 self-hosted runner (배포 서버 그 자체).
