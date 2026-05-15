@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [dev]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-typecheck:
+    name: Lint & Typecheck
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+  test:
+    name: Vitest (unit + integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: gbl
+          POSTGRES_PASSWORD: gbl_dev_password
+          POSTGRES_DB: girls_band_live_test
+          TZ: Asia/Tokyo
+          PGTZ: Asia/Tokyo
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U gbl -d girls_band_live_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://gbl:gbl_dev_password@localhost:5432/girls_band_live_test?schema=public
+      TEST_DATABASE_URL: postgresql://gbl:gbl_dev_password@localhost:5432/girls_band_live_test?schema=public
+      TZ: Asia/Tokyo
+      JWT_SECRET: ci_dummy_jwt_secret_at_least_32_bytes_long_for_tests_only
+      ADMIN_PASSWORD_HASH: $2a$12$abcdefghijklmnopqrstuvCIdummyHashForCIRunsOnlyXXXXXXXXXXXX
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma generate
+
+      - name: Apply migrations to test DB
+        run: pnpm prisma migrate deploy
+
+      - name: Run Vitest
+        run: pnpm test:run

@@ -33,31 +33,52 @@ services:
         condition: service_healthy
 
   # ============================================================================
-  # 어드민 Next.js 앱 (production 빌드).
+  # nginx 리버스 프록시 — blue/green 배포의 트래픽 스위치 역할.
   #
-  # 기본 `docker compose up -d` 에는 포함되지 않는다 (profile=app).
-  # 실행:  docker compose --profile app up -d --build app
+  # - 외부 트래픽은 nginx 만 노출 (`${APP_PORT:-3001}:80`).
+  # - app-blue / app-green 은 호스트 포트를 노출하지 않고 내부 네트워크에서만 접근.
+  # - 활성 색은 `nginx/conf.d/active-upstream.conf` 의 `server app-XXX:3000;` 한 줄로 표현.
+  # - 배포 스크립트가 이 파일을 갱신한 뒤 `nginx -s reload` 로 무중단 전환.
   #
-  # 환경변수 주입 패턴 (README "어드민 dev 인증" 참고):
-  #   - `.env` 파일에 ADMIN_PASSWORD_HASH / JWT_SECRET 를 두지 말 것
-  #     (Next.js dotenv-expand 가 `$` 를 변수 reference 로 해석해 값을 손상)
-  #   - 호스트 shell 의 환경변수를 ${VAR} interpolation 으로 끌어다 쓴다
-  #   - 또는 docker-compose 의 별도 .env (compose 만 보는 파일, app .env 와 별개)
+  # 무중단 보장:
+  #   - nginx reload 는 워커 graceful 재시작 → 기존 연결은 구버전으로 drain, 신규는 신버전.
+  #   - 새 색 컨테이너가 healthy 상태가 된 뒤에만 upstream 전환.
   # ============================================================================
-  app:
+  nginx:
+    profiles: ["app"]
+    image: nginx:1.27-alpine
+    container_name: gbl-nginx
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-3001}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # ============================================================================
+  # 어드민 Next.js 앱 (production 빌드, blue/green).
+  #
+  # 평상시에는 두 색 중 하나만 running. 배포 시 반대 색을 띄워 healthy 가 되면
+  # nginx upstream 을 전환한 뒤 구버전을 stop 한다.
+  #
+  # 직접 실행하지 말 것 — 항상 `scripts/deploy-blue-green.sh` 경유.
+  # 최초 부트스트랩만 `docker compose --profile app up -d app-blue nginx`.
+  # ============================================================================
+  app-blue: &app-template
     profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
-    image: girls-band-live:local
-    container_name: gbl-app
+    image: ${APP_IMAGE:-girls-band-live:local}
+    container_name: gbl-app-blue
     restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3001}:3000"
     environment:
-      # 컨테이너 내부에서 postgres 서비스 호스트네임으로 접근
       DATABASE_URL: postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public
-      # 어드민 인증 — 반드시 호스트 shell 또는 secret store 에서 주입
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?must set ADMIN_PASSWORD_HASH (see README)}
       JWT_SECRET: ${JWT_SECRET:?must set JWT_SECRET (>=32 bytes hex)}
       NODE_ENV: production
@@ -65,6 +86,10 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+
+  app-green:
+    <<: *app-template
+    container_name: gbl-app-green
 
 volumes:
   postgres_data:
