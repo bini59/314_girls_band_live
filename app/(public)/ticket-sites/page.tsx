@@ -20,6 +20,11 @@ type Entry = {
   label?: string;
 };
 
+const FEATURED: Entry = {
+  url: "https://m.dcinside.com/board/bandress/600899",
+  label: "일본 티켓팅 가이드 (밴드리스 갤러리)",
+};
+
 const TICKETS: Entry[] = [
   { url: "https://eplus.jp/", label: "e+ (イープラス)" },
   { url: "https://l-tike.com/", label: "ローソンチケット" },
@@ -52,6 +57,17 @@ export default function TicketSitesPage() {
           일본 직관 가기 전에 — 티켓 사이트 회원가입과 유심 바로가기
         </p>
       </header>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[var(--tracking-caps)] text-[color:var(--color-muted-foreground)]">
+          추천 글
+        </h2>
+        <div className="grid gap-3">
+          <Suspense fallback={<OgCardSkeleton />}>
+            <AsyncOgCard entry={FEATURED} />
+          </Suspense>
+        </div>
+      </section>
 
       <section className="mb-8">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[var(--tracking-caps)] text-[color:var(--color-muted-foreground)]">
