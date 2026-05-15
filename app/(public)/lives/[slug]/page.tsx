@@ -41,9 +41,19 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
             />
           )}
           <div className="min-w-0 flex-1">
-            <span className="inline-block rounded-full bg-[color:var(--color-muted)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide">
-              {TYPE_LABEL[live.type] ?? live.type}
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-block rounded-full bg-[color:var(--color-muted)] px-2 py-0.5 text-xs font-medium uppercase tracking-wide">
+                {TYPE_LABEL[live.type] ?? live.type}
+              </span>
+              {live.tour && live.tour.status === "PUBLISHED" && (
+                <Link
+                  href={`/tours/${live.tour.slug}`}
+                  className="inline-flex items-center gap-1 rounded-full bg-[color:var(--color-primary)]/15 px-2 py-0.5 text-xs font-medium text-[color:var(--color-primary)] hover:bg-[color:var(--color-primary)]/25"
+                >
+                  투어 · {live.tour.nameKo}
+                </Link>
+              )}
+            </div>
             <h1 className="mt-2 text-2xl font-bold leading-tight md:text-3xl">
               {live.titleKo}
             </h1>

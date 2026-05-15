@@ -6,13 +6,17 @@
 // 계층 구조:
 //   Series (시리즈/IP, optional)  예) 러브라이브, 아이마스
 //     └─ Work (작품, 필수)        예) 러브라이브!, 선샤인!!, 뱅드림, 걸즈밴드크라이
-//           └─ Band (밴드)        예) μ's, Aqours, MyGO!!!!!, 토게토게
-//                 └─ LiveBand ─── Live (공연 1건)
+//           ├─ Band (밴드)        예) μ's, Aqours, MyGO!!!!!, 토게토게
+//           │     └─ LiveBand ─── Live (공연 1건)
+//           └─ Tour (투어, optional)  예) 학마스 LIVE TOUR 標, 결속밴드 We will B
+//                 └─ Live (회차)
 //                                  ├─ LiveFormat (실황/LV/배포)
 //                                  │     └─ TicketTier (S석/스탠딩 등)
 //                                  └─ TicketSale (선행/일반/추첨/선착)
 //                                        ├─ Vendor (e+/로손/FC 등)
 //                                        └─ TicketSaleTier (라운드↔티어 N:M)
+//
+// 단독 라이브/페스는 Tour 없이 Live 단독으로 표현 (`tourId = null`).
 // =====================================================================
 
 generator client {
@@ -62,6 +66,11 @@ enum LiveStatus {
   PUBLISHED
 }
 
+enum TourStatus {
+  DRAFT
+  PUBLISHED
+}
+
 // =====================================================================
 // Series (시리즈/IP 묶음, optional)
 //   예) "러브라이브 시리즈", "아이마스 시리즈"
@@ -104,12 +113,52 @@ model Work {
 
   series Series? @relation(fields: [seriesId], references: [id], onDelete: SetNull)
   bands  Band[]
+  tours  Tour[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([seriesId])
   @@map("work")
+}
+
+// =====================================================================
+// Tour (투어, optional)
+//   예) "学園アイドルマスター LIVE TOUR 標" (4도시 8회차)
+//       "結束バンド TOUR We will B"
+//
+//   Work 아래에 매달려 같은 투어의 회차(Live)를 묶는다.
+//   단일 밴드 투어든 다캐스트 작품 투어든 Work 레벨에서 그룹핑 가능.
+//   페스/단독 라이브는 Tour 없이 표현 (Live.tourId = null).
+//
+//   startsAt / endsAt 은 표시 편의용 캐시. 실제 회차 일정은 lives 의
+//   startAt 으로 derive 가능하지만, 일관된 표시·정렬을 위해 두었다.
+// =====================================================================
+
+model Tour {
+  id          Int        @id @default(autoincrement())
+  workId      Int        @map("work_id")
+  slug        String     @unique
+  nameKo      String     @map("name_ko")
+  nameJp      String     @map("name_jp")
+  nameEn      String?    @map("name_en")
+  description String?
+  posterUrl   String?    @map("poster_url")
+  thumbnailUrl String?   @map("thumbnail_url")
+  officialUrl String?    @map("official_url")
+  startsAt    DateTime?  @map("starts_at") // 첫 회차 (UTC)
+  endsAt      DateTime?  @map("ends_at")   // 마지막 회차 (UTC)
+  status      TourStatus @default(DRAFT)
+
+  work  Work   @relation(fields: [workId], references: [id], onDelete: Restrict)
+  lives Live[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([workId])
+  @@index([status, startsAt])
+  @@map("tour")
 }
 
 // =====================================================================
@@ -145,6 +194,7 @@ model Band {
 model Live {
   id                 Int       @id @default(autoincrement())
   slug               String    @unique
+  tourId             Int?      @map("tour_id")            // 투어 회차일 때만
   titleKo            String    @map("title_ko")
   titleJp            String    @map("title_jp")
   titleEn            String?   @map("title_en")
@@ -163,6 +213,7 @@ model Live {
   status             LiveStatus @default(DRAFT)
   deletedAt          DateTime? @map("deleted_at")
 
+  tour        Tour?       @relation(fields: [tourId], references: [id], onDelete: SetNull)
   liveBands   LiveBand[]
   formats     LiveFormat[]
   ticketSales TicketSale[]
@@ -173,6 +224,7 @@ model Live {
   @@index([startAt])
   @@index([status, startAt])
   @@index([deletedAt])
+  @@index([tourId])
   @@map("live")
 }
 

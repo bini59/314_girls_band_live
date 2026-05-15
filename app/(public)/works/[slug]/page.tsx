@@ -57,6 +57,26 @@ export default async function WorkPage({ params }: { params: Params }) {
             </ul>
           </div>
         )}
+
+        {work.tours.length > 0 && (
+          <div className="mt-4">
+            <h2 className="text-xs font-medium uppercase tracking-wide text-[color:var(--color-muted-foreground)]">
+              투어 {work.tours.length}
+            </h2>
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {work.tours.map((tour) => (
+                <li key={tour.id}>
+                  <Link
+                    href={`/tours/${tour.slug}`}
+                    className="rounded-full border border-[color:var(--color-border)] px-3 py-1 text-sm hover:bg-[color:var(--color-muted)]"
+                  >
+                    {tour.nameKo}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </header>
 
       <section className="mb-6">

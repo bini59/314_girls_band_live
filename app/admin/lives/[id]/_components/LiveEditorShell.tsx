@@ -11,6 +11,7 @@ import { TicketSalesSection } from "./TicketSalesSection";
 
 import type { TierMultiSelectFormat } from "./TierMultiSelect";
 import type { SerializedTicketSale } from "../ticket-sale-actions";
+import type { TourOption } from "../../_components/LiveHeaderFields";
 import type { listTicketSales } from "@/lib/ticket-sale/repo";
 
 /**
@@ -35,6 +36,7 @@ export interface LiveEditorShellProps {
   liveFormats: LiveFormatRow[];
   ticketSales: SerializedTicketSaleRow[];
   vendors: Vendor[];
+  tours: TourOption[];
 }
 
 /**
@@ -79,6 +81,7 @@ export function LiveEditorShell({
   liveFormats,
   ticketSales,
   vendors,
+  tours,
 }: LiveEditorShellProps) {
   // 출연 밴드 → LiveBandsSectionItem 형태로 변환.
   const initialBands = liveBands.map((lb) => ({
@@ -145,7 +148,7 @@ export function LiveEditorShell({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_18rem]">
         <div className="flex flex-col gap-6">
-          <LiveHeaderSection live={live} />
+          <LiveHeaderSection live={live} tours={tours} />
 
           <LiveBandsSection
             liveId={live.id}
