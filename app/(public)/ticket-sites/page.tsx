@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
 import { fetchOg } from "@/lib/og-fetch";
 import { OgCard } from "@/components/site/og-card";
+import { OgCardSkeleton } from "@/components/site/og-card-skeleton";
 
 export const metadata: Metadata = {
   title: "티켓사이트 가입 | 걸즈밴드 라이브",
@@ -9,6 +11,7 @@ export const metadata: Metadata = {
 };
 
 // 빌드 시 prerender 금지 — SiteHeader 가 DB(Prisma) 를 호출하므로 동적 렌더링.
+// 단, 페이지 셸은 즉시 응답하고 외부 OG fetch 는 Suspense 로 스트리밍한다.
 // OG 데이터는 fetchOg() 내부 fetch 캐시(86400s)로 캐싱된다.
 export const dynamic = "force-dynamic";
 
@@ -33,15 +36,12 @@ const SIMS: Entry[] = [
   { url: "https://www.japan-wireless.com/", label: "Japan Wireless" },
 ];
 
-async function loadAll(entries: Entry[]) {
-  return Promise.all(
-    entries.map(async (e) => ({ entry: e, og: await fetchOg(e.url) }))
-  );
+async function AsyncOgCard({ entry }: { entry: Entry }) {
+  const og = await fetchOg(entry.url);
+  return <OgCard og={og} fallbackLabel={entry.label} />;
 }
 
-export default async function TicketSitesPage() {
-  const [tickets, sims] = await Promise.all([loadAll(TICKETS), loadAll(SIMS)]);
-
+export default function TicketSitesPage() {
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
       <header className="mb-6">
@@ -58,8 +58,10 @@ export default async function TicketSitesPage() {
           티켓 사이트
         </h2>
         <div className="grid gap-3 md:grid-cols-2">
-          {tickets.map(({ entry, og }) => (
-            <OgCard key={entry.url} og={og} fallbackLabel={entry.label} />
+          {TICKETS.map((entry) => (
+            <Suspense key={entry.url} fallback={<OgCardSkeleton />}>
+              <AsyncOgCard entry={entry} />
+            </Suspense>
           ))}
         </div>
       </section>
@@ -69,8 +71,10 @@ export default async function TicketSitesPage() {
           일본 유심 / eSIM
         </h2>
         <div className="grid gap-3 md:grid-cols-2">
-          {sims.map(({ entry, og }) => (
-            <OgCard key={entry.url} og={og} fallbackLabel={entry.label} />
+          {SIMS.map((entry) => (
+            <Suspense key={entry.url} fallback={<OgCardSkeleton />}>
+              <AsyncOgCard entry={entry} />
+            </Suspense>
           ))}
         </div>
       </section>
