@@ -9,7 +9,7 @@ import { BandsTable } from "./_components/BandsTable";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "밴드 관리 — 걸즈밴드 라이브",
+  title: "밴드 관리 — 원정가고싶다",
 };
 
 export default async function AdminBandsPage() {

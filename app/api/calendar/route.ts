@@ -26,23 +26,23 @@ export async function GET(req: NextRequest) {
   const bandSlug = searchParams.get("band");
 
   let lives;
-  let calendarName = "걸즈밴드 라이브";
+  let calendarName = "원정가고싶다";
   let scope: string | undefined;
   let suffix = "";
 
   if (tourSlug) {
     lives = await getLivesByTourSlug(tourSlug);
-    calendarName = `걸즈밴드 라이브 — ${tourSlug}`;
+    calendarName = `원정가고싶다 — ${tourSlug}`;
     scope = `투어: ${tourSlug}`;
     suffix = `-${tourSlug}`;
   } else if (bandSlug) {
     lives = await getLivesByBandSlug(bandSlug);
-    calendarName = `걸즈밴드 라이브 — ${bandSlug}`;
+    calendarName = `원정가고싶다 — ${bandSlug}`;
     scope = `밴드: ${bandSlug}`;
     suffix = `-${bandSlug}`;
   } else if (workSlug) {
     lives = await getLivesByWorkSlug(workSlug);
-    calendarName = `걸즈밴드 라이브 — ${workSlug}`;
+    calendarName = `원정가고싶다 — ${workSlug}`;
     scope = `작품: ${workSlug}`;
     suffix = `-${workSlug}`;
   } else {

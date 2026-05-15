@@ -76,7 +76,7 @@ describe("buildIcs", () => {
     const ics = buildIcs({
       lives: [baseLive],
       host: "example.com",
-      calendarName: "걸즈밴드 라이브 — gakumas-tour-shirube",
+      calendarName: "원정가고싶다 — gakumas-tour-shirube",
       scope: "투어: gakumas-tour-shirube",
     });
     expect(ics).toContain("X-WR-CALDESC:투어: gakumas-tour-shirube");

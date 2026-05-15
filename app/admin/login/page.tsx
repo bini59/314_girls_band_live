@@ -3,7 +3,7 @@ import LoginForm from "./LoginForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "어드민 로그인 — 걸즈밴드 라이브",
+  title: "어드민 로그인 — 원정가고싶다",
 };
 
 export default function AdminLoginPage() {
