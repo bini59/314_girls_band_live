@@ -19,11 +19,18 @@ RUN apt-get update \
 
 RUN corepack enable
 
-# 의존성 캐싱
+# 의존성 — buildx cache mount 로 pnpm store 를 재사용 (재빌드 시 dl/extract 생략).
+# 호스트 캐시는 GHA cache(buildx) 가 담당.
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
+    pnpm config set store-dir /root/.local/share/pnpm/store \
+ && pnpm install --frozen-lockfile
 
-# 빌드
+# Prisma schema 만 먼저 복사 — schema 가 안 바뀌면 generate 캐시 layer 재사용.
+COPY prisma ./prisma
+RUN pnpm prisma generate
+
+# 나머지 소스
 COPY . .
 
 # Prisma 가 schema 파싱 시 DATABASE_URL 존재 여부를 검증한다.
@@ -33,7 +40,6 @@ ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
 # 빌드 중 SSG/Server Component 에서 PrismaClient 인스턴스 생성만 일어나도록(실제 쿼리 X)
 # Next.js 가 fetch 단계에서 DB 에 접근하면 별도 처리(force-dynamic) 필요.
 
-RUN pnpm prisma generate
 RUN pnpm build
 
 # -----------------------------------------------------------------------------

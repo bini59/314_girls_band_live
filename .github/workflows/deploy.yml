@@ -19,8 +19,9 @@ jobs:
   # ---------------------------------------------------------------------------
   build-and-push:
     name: Build & Push image to GHCR
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # 네이티브 ARM 러너 (public 저장소 무료) — QEMU 에뮬레이션 회피로 빌드 ~3배 단축.
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
@@ -28,11 +29,6 @@ jobs:
       image_tag: sha-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up QEMU (multi-arch emulation)
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -64,9 +60,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          # 멀티 아키텍처 — amd64 (개발/일반 서버) + arm64 (예: Raspberry Pi, Ampere, Apple Silicon).
-          # 배포 서버 아키텍처가 한 가지로 고정되면 그 하나만 남겨 빌드 시간을 줄여도 된다.
-          platforms: linux/amd64,linux/arm64
+          # 배포 서버 ARM64 단일 아키텍처 — 빌드 시간 최소화.
+          # 다른 아키텍처 서버 추가 시 platforms 에 추가.
+          platforms: linux/arm64
 
   # ---------------------------------------------------------------------------
   # 2) 실제 배포는 self-hosted runner (배포 서버 그 자체).
