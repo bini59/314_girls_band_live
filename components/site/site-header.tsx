@@ -4,6 +4,7 @@ import { getWorksForNav } from "@/lib/public/queries";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
+import { MobileMenu } from "./mobile-menu";
 import { WorksNav } from "./works-nav";
 
 /**
@@ -41,11 +42,8 @@ export async function SiteHeader() {
             티켓사이트 가입!!
           </Link>
           <ThemeToggle />
+          <MobileMenu works={works} />
         </div>
-      </div>
-
-      <div className="px-4 py-2 md:hidden">
-        <WorksNav works={works} />
       </div>
     </header>
   );
