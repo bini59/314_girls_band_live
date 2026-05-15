@@ -9,7 +9,7 @@ import { LivesTable } from "./_components/LivesTable";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "라이브 관리 — 걸즈밴드 라이브",
+  title: "라이브 관리 — 원정가고싶다",
 };
 
 /**

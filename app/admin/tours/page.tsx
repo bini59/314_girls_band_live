@@ -8,7 +8,7 @@ import { ToursTable } from "./_components/ToursTable";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "투어 관리 — 걸즈밴드 라이브",
+  title: "투어 관리 — 원정가고싶다",
 };
 
 export default async function AdminToursPage() {

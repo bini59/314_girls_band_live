@@ -10,7 +10,7 @@ import { BandForm } from "../_components/BandForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "밴드 추가 — 걸즈밴드 라이브",
+  title: "밴드 추가 — 원정가고싶다",
 };
 
 export default async function AdminBandNewPage() {

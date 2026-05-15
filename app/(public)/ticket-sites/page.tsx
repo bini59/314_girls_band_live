@@ -6,7 +6,7 @@ import { OgCard } from "@/components/site/og-card";
 import { OgCardSkeleton } from "@/components/site/og-card-skeleton";
 
 export const metadata: Metadata = {
-  title: "티켓사이트 가입 | 걸즈밴드 라이브",
+  title: "티켓사이트 가입 | 원정가고싶다",
   description: "일본 라이브 티켓 사이트 회원가입 / 일본 유심·eSIM 바로가기",
 };
 

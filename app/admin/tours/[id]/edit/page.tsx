@@ -13,7 +13,7 @@ import { TourForm } from "../../_components/TourForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "투어 편집 — 걸즈밴드 라이브",
+  title: "투어 편집 — 원정가고싶다",
 };
 
 interface PageProps {

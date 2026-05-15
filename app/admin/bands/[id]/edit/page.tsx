@@ -13,7 +13,7 @@ import { BandForm } from "../../_components/BandForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "밴드 편집 — 걸즈밴드 라이브",
+  title: "밴드 편집 — 원정가고싶다",
 };
 
 interface PageProps {

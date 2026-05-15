@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { getWorksForNav } from "@/lib/public/queries";
@@ -21,13 +22,16 @@ export async function SiteHeader() {
           href="/"
           className="flex shrink-0 items-center gap-2 text-base font-bold tracking-tight"
         >
-          <span
+          <Image
+            src="/logo.png"
+            alt=""
             aria-hidden
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[color:var(--color-primary)] text-[color:var(--color-primary-foreground)] text-sm"
-          >
-            🎸
-          </span>
-          <span>걸즈밴드 라이브</span>
+            width={32}
+            height={32}
+            priority
+            className="h-8 w-8 rounded-full object-cover"
+          />
+          <span>원정가고싶다</span>
         </Link>
 
         <div className="hidden flex-1 md:flex md:items-center md:justify-start">

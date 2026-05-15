@@ -5,7 +5,7 @@ import NewLiveForm from "./NewLiveForm";
 export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: "새 라이브 등록 — 걸즈밴드 라이브",
+  title: "새 라이브 등록 — 원정가고싶다",
 };
 
 /**

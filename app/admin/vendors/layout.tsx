@@ -13,7 +13,7 @@ import { AdminShell } from "../_components/AdminShell";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "판매처 관리 — 걸즈밴드 라이브",
+  title: "판매처 관리 — 원정가고싶다",
 };
 
 export default async function AdminVendorsLayout({
