@@ -241,6 +241,66 @@ describe("liveHeaderCreateSchema — 시간 관계 검증", () => {
   });
 });
 
+describe("liveHeaderCreateSchema — posterUrl / thumbnailUrl", () => {
+  it("유효 http(s) URL 통과", () => {
+    const parsed = liveHeaderCreateSchema.safeParse({
+      ...VALID_BASE,
+      posterUrl: "https://cdn.example.com/poster.jpg",
+      thumbnailUrl: "https://cdn.example.com/thumb.jpg",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("빈 문자열 허용 (선택 필드)", () => {
+    const parsed = liveHeaderCreateSchema.safeParse({
+      ...VALID_BASE,
+      posterUrl: "",
+      thumbnailUrl: "",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("http(s) 가 아닌 URL 은 거부 (javascript:)", () => {
+    const parsed = liveHeaderCreateSchema.safeParse({
+      ...VALID_BASE,
+      posterUrl: "javascript:alert(1)",
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("올바르지 않은 URL 은 거부", () => {
+    const parsed = liveHeaderCreateSchema.safeParse({
+      ...VALID_BASE,
+      thumbnailUrl: "not-a-url",
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
+describe("liveHeaderUpdateSchema — posterUrl / thumbnailUrl", () => {
+  it("posterUrl 만 변경 (자동저장)", () => {
+    const parsed = liveHeaderUpdateSchema.safeParse({
+      posterUrl: "https://example.com/p.png",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("빈 문자열로 클리어 의도", () => {
+    const parsed = liveHeaderUpdateSchema.safeParse({
+      posterUrl: "",
+      thumbnailUrl: "",
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("불량 URL 은 거부", () => {
+    const parsed = liveHeaderUpdateSchema.safeParse({
+      thumbnailUrl: "javascript:alert(1)",
+    });
+    expect(parsed.success).toBe(false);
+  });
+});
+
 describe("liveHeaderUpdateSchema — 모든 필드 optional", () => {
   it("빈 객체 통과 (자동저장 디바운스 직후 변경 없음 케이스)", () => {
     const parsed = liveHeaderUpdateSchema.safeParse({});

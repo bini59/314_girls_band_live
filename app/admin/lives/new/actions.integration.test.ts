@@ -261,6 +261,34 @@ describe("createLiveHeaderAction — 성공", () => {
     expect(venue!.venueName).toBe(VALID_FORM.venueName);
   });
 
+  it("posterUrl / thumbnailUrl 이 입력되면 DB 에 저장된다", async () => {
+    const fd = makeFormData({
+      ...VALID_FORM,
+      posterUrl: "https://cdn.example.com/poster.jpg",
+      thumbnailUrl: "https://cdn.example.com/thumb.jpg",
+    });
+    try {
+      await callCreate(undefined, fd);
+    } catch {
+      /* redirect */
+    }
+    const live = await testDb.live.findFirst();
+    expect(live!.posterUrl).toBe("https://cdn.example.com/poster.jpg");
+    expect(live!.thumbnailUrl).toBe("https://cdn.example.com/thumb.jpg");
+  });
+
+  it("posterUrl / thumbnailUrl 미입력 시 null 로 저장된다", async () => {
+    const fd = makeFormData(VALID_FORM);
+    try {
+      await callCreate(undefined, fd);
+    } catch {
+      /* redirect */
+    }
+    const live = await testDb.live.findFirst();
+    expect(live!.posterUrl).toBeNull();
+    expect(live!.thumbnailUrl).toBeNull();
+  });
+
   it("doorsOpenAtJst 가 비어있는 date-only 입력은 fillDefaultTime 으로 18:00 부착", async () => {
     // 단순화: doorsOpenAtJst="2026-03-15" 만 전달 → 18:00 가 부착되어 startAt(18:00) 와 같아지므로
     // 검증 통과를 위해 doorsOpenAt 보다 startAt 을 늦게 잡음 (19:00).
