@@ -25,6 +25,14 @@ RUN pnpm install --frozen-lockfile
 
 # 빌드
 COPY . .
+
+# Prisma 가 schema 파싱 시 DATABASE_URL 존재 여부를 검증한다.
+# 빌드 단계에서는 실제 연결을 하지 않으므로 dummy 값으로 충분.
+# 런타임에는 docker-compose 가 실제 DATABASE_URL 을 주입한다.
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy?schema=public"
+# 빌드 중 SSG/Server Component 에서 PrismaClient 인스턴스 생성만 일어나도록(실제 쿼리 X)
+# Next.js 가 fetch 단계에서 DB 에 접근하면 별도 처리(force-dynamic) 필요.
+
 RUN pnpm prisma generate
 RUN pnpm build
 
