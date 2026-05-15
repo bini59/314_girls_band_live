@@ -21,8 +21,7 @@ jobs:
       contents: read
       packages: write
     outputs:
-      image: ${{ steps.meta.outputs.tags }}
-      digest: ${{ steps.build.outputs.digest }}
+      image_tag: sha-${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,11 +42,10 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest
-            type=sha,format=long
-            type=sha,format=short
+            type=sha,prefix=sha-,format=long
+            type=sha,prefix=sha-
 
       - name: Build and push
-        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -60,13 +58,13 @@ jobs:
           platforms: linux/amd64
 
   deploy:
-    name: Deploy to server
+    name: Blue/Green deploy to server
     needs: build-and-push
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     environment: production
     steps:
-      - name: Deploy over SSH
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
@@ -74,33 +72,30 @@ jobs:
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || 22 }}
           script_stop: true
+          envs: GITHUB_SHA
           script: |
             set -euo pipefail
             cd "${{ secrets.DEPLOY_PATH }}"
 
-            # 최신 docker-compose.yml / Dockerfile 동기화 (배포 서버에 git clone 되어 있다고 가정)
+            # 최신 docker-compose / nginx config / 배포 스크립트 동기화
             git fetch origin main
             git reset --hard origin/main
 
-            # GHCR 로그인 (서버에 1회만 설정해 두면 생략 가능)
+            # GHCR pull 권한 (없으면 한 번만 설정)
             echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
 
-            # 신규 이미지 pull
-            export IMAGE_TAG="sha-${{ github.sha }}"
-            docker pull ghcr.io/${{ github.repository }}:${IMAGE_TAG}
-            docker tag ghcr.io/${{ github.repository }}:${IMAGE_TAG} girls-band-live:local
+            # postgres + nginx 가 살아 있는지 확인 — 없으면 부트스트랩
+            if ! docker compose ps --services --filter "status=running" | grep -q '^nginx$'; then
+              echo "Bootstrapping postgres + nginx + app-blue (first run)"
+              APP_IMAGE="ghcr.io/${{ github.repository }}:sha-${GITHUB_SHA}" \
+                docker compose --profile app up -d postgres nginx app-blue
+              # 첫 부트스트랩이면 blue 가 active 라서 일반 배포 스크립트는 green 으로 전환함
+            fi
 
-            # 마이그레이션 (일회성 컨테이너)
-            docker run --rm --network host \
-              -e DATABASE_URL="${DATABASE_URL}" \
-              -v "$PWD/prisma:/prisma" \
-              node:20-bookworm-slim \
-              sh -c "npx prisma migrate deploy --schema=/prisma/schema.prisma"
+            # blue/green 배포 (스크립트 내부에서 prisma migrate 도 실행)
+            IMAGE_TAG="sha-${GITHUB_SHA}" \
+            IMAGE_REPO="ghcr.io/${{ github.repository }}" \
+              ./scripts/deploy-blue-green.sh
 
-            # 앱 재기동
-            docker compose --profile app up -d --no-build app
-
-            # 헬스체크 & 오래된 이미지 정리
-            sleep 5
-            docker compose ps
+            # 오래된 이미지 정리
             docker image prune -f

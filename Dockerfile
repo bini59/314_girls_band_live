@@ -58,6 +58,11 @@ COPY --chown=nextjs:nodejs --from=builder /app/prisma ./prisma
 USER nextjs
 EXPOSE 3000
 
+# 컨테이너 헬스체크 — blue/green 배포에서 새 컨테이너의 준비 상태 판정에 사용.
+# slim 이미지에 curl/wget 이 없어서 node 의 fetch 사용 (Node 20+ 내장).
+HEALTHCHECK --interval=10s --timeout=5s --start-period=20s --retries=6 \
+  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+
 # 마이그레이션은 컨테이너 시작 전에 별도로 실행해야 한다:
 #   pnpm prisma:migrate:deploy  (호스트에서 TEST_DATABASE_URL 또는 DATABASE_URL 지정)
 # 또는 일회성 migrator 컨테이너로:
