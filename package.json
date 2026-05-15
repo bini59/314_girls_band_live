@@ -1,6 +1,6 @@
 {
   "name": "girls-band-live",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "description": "애니/게임 기반 걸즈밴드 라이브 일정 아카이브",
   "packageManager": "pnpm@9.12.0",
