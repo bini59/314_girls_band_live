@@ -7,6 +7,7 @@ import {
   TICKET_SALE_TYPE_LABELS,
   formatJpy,
 } from "@/app/admin/lives/[id]/_components/ticket-sale-labels";
+import { Markdown } from "@/components/ui/markdown";
 import { formatJstHuman } from "@/lib/jst";
 import { getLiveBySlug } from "@/lib/public/queries";
 
@@ -259,9 +260,9 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
                     </a>
                   )}
                   {sale.notes && (
-                    <p className="mt-2 whitespace-pre-line text-xs text-[color:var(--color-muted-foreground)]">
-                      {sale.notes}
-                    </p>
+                    <div className="mt-2 text-[color:var(--color-muted-foreground)]">
+                      <Markdown size="sm">{sale.notes}</Markdown>
+                    </div>
                   )}
                 </li>
               ))}
@@ -271,7 +272,7 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
 
         {live.notes && (
           <Section title="비고">
-            <p className="whitespace-pre-line text-sm leading-relaxed">{live.notes}</p>
+            <Markdown>{live.notes}</Markdown>
           </Section>
         )}
       </article>
