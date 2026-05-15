@@ -85,12 +85,18 @@ docker tag "$FULL_IMAGE" girls-band-live:local
 
 # --- 3) Prisma migrate (앱 기동 전에 idempotent 하게 적용) ----------------------
 log "running prisma migrate deploy"
-docker run --rm --network "$(docker inspect gbl-postgres --format '{{range $k, $_ := .NetworkSettings.Networks}}{{$k}}{{end}}')" \
+# 일회성 마이그레이션 컨테이너:
+#   - root(-u 0:0): 이미지의 nextjs 유저 홈 디렉터리가 없어 npx 캐시(`~/.npm`) 쓰기 실패하는 문제 회피.
+#   - HOME=/tmp:    npx 가 패키지 캐시를 쓸 수 있는 쓰기 가능 경로 지정.
+#   - npx -y:       prompt 자동 수락. prisma 버전은 .env 또는 schema 로 결정.
+docker run --rm -u 0:0 \
+  --network "$(docker inspect gbl-postgres --format '{{range $k, $_ := .NetworkSettings.Networks}}{{$k}}{{end}}')" \
   -e DATABASE_URL="postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public" \
+  -e HOME=/tmp \
   -v "$PWD/prisma:/prisma:ro" \
   --entrypoint sh \
   "$FULL_IMAGE" \
-  -c "npx prisma migrate deploy --schema=/prisma/schema.prisma"
+  -c "cd /tmp && npx -y prisma@5.22.0 migrate deploy --schema=/prisma/schema.prisma"
 
 # --- 4) 새 색 기동 -------------------------------------------------------------
 log "starting app-$TARGET with new image"
