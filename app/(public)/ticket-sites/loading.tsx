@@ -14,6 +14,15 @@ export default function Loading() {
 
       <section className="mb-8">
         <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[var(--tracking-caps)] text-[color:var(--color-muted-foreground)]">
+          추천 글
+        </h2>
+        <div className="grid gap-3">
+          <OgCardSkeleton />
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-[11px] font-bold uppercase tracking-[var(--tracking-caps)] text-[color:var(--color-muted-foreground)]">
           티켓 사이트
         </h2>
         <div className="grid gap-3 md:grid-cols-2">
