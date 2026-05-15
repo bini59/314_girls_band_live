@@ -111,8 +111,32 @@ pnpm test:e2e           # Playwright (앞으로 추가)
 
 ## 운영 컨벤션
 
-- 브랜치: `feature/xxx`, `fix/xxx`, `refactor/xxx`, `chore/xxx`
+### 브랜치 전략
+
+- **`main`** — 프로덕션. **직접 커밋·푸시 금지.** push 시 GitHub Actions `deploy.yml`이 GHCR 빌드/푸시 + 배포 서버에 SSH 배포를 실행한다.
+- **`dev`** — 통합 브랜치. 모든 작업의 베이스. 일상 작업은 여기에 머지된다.
+- **feature 브랜치** — `feature/xxx`, `fix/xxx`, `refactor/xxx`, `chore/xxx`. **반드시 `dev`에서 분기**하고 작업 종료 후 `dev`에 머지한다 (PR 또는 fast-forward).
+- **릴리즈** — `dev`가 안정화되면 `dev → main` PR을 올린다. PR이 열리면 `ci.yml`(lint + typecheck + vitest)이 실행되며, **모든 잡이 GREEN이어야 머지 가능**.
+
+```
+feature/xxx ──merge──▶ dev ──PR──▶ main ──push trigger──▶ deploy (GHCR + SSH)
+                        ▲                    ▲
+                        │                    │
+                        └ 일상 작업 통합      └ CI: lint + tsc + vitest (must pass)
+```
+
+### 워크플로 약속
+
 - 커밋: `feat: …` / `fix: …` / `refactor: …` 등 conventional
-- 통합 브랜치는 `main` 또는 `staging` (초기 셋업 단계)
-- pre-commit hook이 타입 체크 + 테스트 자동 실행 (예정)
-- 테스트 수동 실행 안 함 — hook이 처리
+- 새 작업 시작 시 베이스 브랜치 확인: `git checkout dev && git pull` → `git checkout -b feature/xxx`
+- `main`에 직접 푸시하지 않는다. 항상 `dev` 경유 PR.
+- `dev → main` PR 머지 후 자동 배포되므로, 머지 전에 dev에서 충분히 검증한다.
+- pre-commit hook이 타입 체크 + 테스트 자동 실행 (예정). 수동 실행 안 함.
+
+### CI/CD 파이프라인
+
+- `.github/workflows/ci.yml` — `pull_request → main` 및 `push → dev` 트리거. lint + typecheck + vitest(Postgres service) 실행.
+- `.github/workflows/deploy.yml` — `push → main` 트리거. Docker 이미지 GHCR 푸시 → SSH로 배포 서버에서 `docker compose --profile app up -d` 실행. 필요한 시크릿:
+  - `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_PORT`(선택), `DEPLOY_PATH`
+  - `GHCR_USER`, `GHCR_TOKEN` (서버에서 GHCR pull 권한)
+  - 서버 측 `.env`: `DATABASE_URL`, `ADMIN_PASSWORD_HASH`, `JWT_SECRET`, `POSTGRES_PASSWORD`

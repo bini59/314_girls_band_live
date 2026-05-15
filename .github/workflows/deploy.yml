@@ -1,0 +1,106 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    name: Build & Push image to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+            type=sha,format=short
+
+      - name: Build and push
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64
+
+  deploy:
+    name: Deploy to server
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: production
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.DEPLOY_PATH }}"
+
+            # 최신 docker-compose.yml / Dockerfile 동기화 (배포 서버에 git clone 되어 있다고 가정)
+            git fetch origin main
+            git reset --hard origin/main
+
+            # GHCR 로그인 (서버에 1회만 설정해 두면 생략 가능)
+            echo "${{ secrets.GHCR_TOKEN }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
+
+            # 신규 이미지 pull
+            export IMAGE_TAG="sha-${{ github.sha }}"
+            docker pull ghcr.io/${{ github.repository }}:${IMAGE_TAG}
+            docker tag ghcr.io/${{ github.repository }}:${IMAGE_TAG} girls-band-live:local
+
+            # 마이그레이션 (일회성 컨테이너)
+            docker run --rm --network host \
+              -e DATABASE_URL="${DATABASE_URL}" \
+              -v "$PWD/prisma:/prisma" \
+              node:20-bookworm-slim \
+              sh -c "npx prisma migrate deploy --schema=/prisma/schema.prisma"
+
+            # 앱 재기동
+            docker compose --profile app up -d --no-build app
+
+            # 헬스체크 & 오래된 이미지 정리
+            sleep 5
+            docker compose ps
+            docker image prune -f
