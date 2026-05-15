@@ -8,8 +8,8 @@ export const metadata: Metadata = {
   description: "일본 라이브 티켓 사이트 회원가입 / 일본 유심·eSIM 바로가기",
 };
 
-// 1일 단위 ISR — OG 데이터는 거의 안 바뀜
-export const revalidate = 60 * 60 * 24;
+// 1일 단위 ISR — OG 데이터는 거의 안 바뀜 (86400 = 60*60*24)
+export const revalidate = 86400;
 
 type Entry = {
   url: string;
