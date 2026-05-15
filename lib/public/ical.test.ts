@@ -71,4 +71,14 @@ describe("buildIcs", () => {
     expect(ics).toContain("DTSTART:20260315T100000Z");
     expect(ics).toContain("DTEND:20260315T130000Z");
   });
+
+  it("scope 가 주어지면 X-WR-CALDESC 로 포함된다 (투어 등)", () => {
+    const ics = buildIcs({
+      lives: [baseLive],
+      host: "example.com",
+      calendarName: "걸즈밴드 라이브 — gakumas-tour-shirube",
+      scope: "투어: gakumas-tour-shirube",
+    });
+    expect(ics).toContain("X-WR-CALDESC:투어: gakumas-tour-shirube");
+  });
 });

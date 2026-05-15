@@ -34,7 +34,16 @@ export interface LiveHeaderFieldValues {
   thumbnailUrl?: string;
   slug?: string;
   notes?: string;
+  /** 투어 회차일 때만. 단독 라이브/페스는 null. */
+  tourId?: number | null;
 }
+
+/** Tour select 의 표시용 최소 옵션 shape. */
+export type TourOption = {
+  id: number;
+  nameKo: string;
+  workNameKo: string;
+};
 
 export type LiveHeaderFieldErrors = Partial<
   Record<keyof LiveHeaderFieldValues, string[]>
@@ -51,7 +60,11 @@ export interface LiveHeaderFieldsProps {
   slugMode?: "required" | "optional" | "readonly";
   /** 메모(notes) textarea 포함 여부. */
   includeNotes?: boolean;
+  /** 투어 옵션 목록. 없으면 Tour Select 미노출. */
+  tours?: TourOption[];
 }
+
+const NULL_TOUR_VALUE = "__null__";
 
 export function LiveHeaderFields({
   values,
@@ -59,6 +72,7 @@ export function LiveHeaderFields({
   errors = {},
   slugMode = "required",
   includeNotes = false,
+  tours,
 }: LiveHeaderFieldsProps): React.JSX.Element {
   const slugRequired = slugMode === "required";
   const slugReadonly = slugMode === "readonly";
@@ -179,6 +193,42 @@ export function LiveHeaderFields({
             : undefined
         }
       />
+
+      {tours ? (
+        <div className="flex flex-col gap-1 md:col-span-2">
+          <Label htmlFor="tourId">투어 (선택)</Label>
+          <select
+            id="tourId"
+            name="tourId"
+            value={
+              values.tourId == null
+                ? NULL_TOUR_VALUE
+                : String(values.tourId)
+            }
+            onChange={(e) =>
+              onChange(
+                "tourId",
+                e.target.value === NULL_TOUR_VALUE
+                  ? null
+                  : Number(e.target.value)
+              )
+            }
+            className="flex h-10 w-full rounded-[var(--radius-md)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] px-3 py-2 text-sm text-[color:var(--color-foreground)]"
+            aria-invalid={!!errors.tourId}
+          >
+            <option value={NULL_TOUR_VALUE}>— 투어 없음 —</option>
+            {tours.map((t) => (
+              <option key={t.id} value={String(t.id)}>
+                {t.workNameKo} — {t.nameKo}
+              </option>
+            ))}
+          </select>
+          <FieldError messages={errors.tourId} />
+          <p className="text-xs text-[color:var(--color-muted-foreground)]">
+            전국 투어 회차라면 선택. 단독 라이브/페스는 비워두세요.
+          </p>
+        </div>
+      ) : null}
 
       <fieldset className="md:col-span-2 flex flex-col gap-3 rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-4">
         <legend className="px-1 text-sm font-medium text-[color:var(--color-foreground)]">

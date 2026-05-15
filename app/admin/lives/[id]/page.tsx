@@ -4,6 +4,7 @@ import { getLiveById } from "@/lib/live/repo";
 import { listLiveBands } from "@/lib/live-band/repo";
 import { listLiveFormats } from "@/lib/live-format/repo";
 import { listTicketSales } from "@/lib/ticket-sale/repo";
+import { listTours } from "@/lib/tours/repo";
 import { listVendors } from "@/lib/vendors/repo";
 
 import { LiveEditorShell } from "./_components/LiveEditorShell";
@@ -43,12 +44,19 @@ export default async function LiveEditPage({
     notFound();
   }
 
-  const [liveBands, liveFormats, ticketSales, vendors] = await Promise.all([
+  const [liveBands, liveFormats, ticketSales, vendors, tours] = await Promise.all([
     listLiveBands(liveId),
     listLiveFormats(liveId),
     listTicketSales(liveId),
     listVendors(),
+    listTours(),
   ]);
+
+  const tourOptions = tours.map((t) => ({
+    id: t.id,
+    nameKo: t.nameKo,
+    workNameKo: t.work.nameKo,
+  }));
 
   return (
     <LiveEditorShell
@@ -57,6 +65,7 @@ export default async function LiveEditPage({
       liveFormats={liveFormats}
       ticketSales={ticketSales}
       vendors={vendors}
+      tours={tourOptions}
     />
   );
 }

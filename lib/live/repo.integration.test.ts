@@ -218,12 +218,67 @@ describe("listLivesForAdmin", () => {
   });
 });
 
+describe("createLive — tourId 연동", () => {
+  const baseCreate = {
+    slug: "tour-test-base",
+    titleKo: "테스트",
+    titleJp: "テスト",
+    type: "SOLO" as const,
+    startAt: new Date("2026-03-15T09:00:00Z"),
+    venueName: "테스트장",
+  };
+
+  it("tourId 미지정 시 NULL 로 생성", async () => {
+    const live = await createLiveRepo({ ...baseCreate, slug: "no-tour-1" });
+    expect(live.tourId).toBeNull();
+  });
+
+  it("tourId 지정 시 Tour 회차로 생성", async () => {
+    const work = await testDb.work.create({
+      data: { slug: "w-for-tour", nameKo: "워크", nameJp: "ワーク" },
+    });
+    const tour = await testDb.tour.create({
+      data: {
+        workId: work.id,
+        slug: "t-for-live",
+        nameKo: "투어",
+        nameJp: "ツアー",
+      },
+    });
+    const live = await createLiveRepo({
+      ...baseCreate,
+      slug: "with-tour-1",
+      tourId: tour.id,
+    });
+    expect(live.tourId).toBe(tour.id);
+  });
+});
+
 describe("updateLive", () => {
   it("부분 패치 (예: titleKo 만) 가능", async () => {
     const created = await createLive();
     const updated = await updateLive(created.id, { titleKo: "수정됨" });
     expect(updated.titleKo).toBe("수정됨");
     expect(updated.titleJp).toBe(created.titleJp);
+  });
+
+  it("tourId 매달기/풀기", async () => {
+    const work = await testDb.work.create({
+      data: { slug: "w-upd", nameKo: "워크", nameJp: "ワーク" },
+    });
+    const tour = await testDb.tour.create({
+      data: {
+        workId: work.id,
+        slug: "t-upd",
+        nameKo: "투어",
+        nameJp: "ツアー",
+      },
+    });
+    const live = await createLive();
+    const attached = await updateLive(live.id, { tourId: tour.id });
+    expect(attached.tourId).toBe(tour.id);
+    const detached = await updateLive(live.id, { tourId: null });
+    expect(detached.tourId).toBeNull();
   });
 
   it("updatedAt 가 갱신된다", async () => {

@@ -98,6 +98,13 @@ const baseLiveFields = z.object({
     .or(z.literal("")),
   slug: z.string().optional(),
   notes: z.string().max(10000).optional(),
+  // Tour 회차일 때만 양의 정수, 단독 라이브/페스는 null.
+  tourId: z
+    .number()
+    .int("정수여야 합니다.")
+    .positive("양의 정수만 허용됩니다.")
+    .nullable()
+    .optional(),
 });
 
 /**

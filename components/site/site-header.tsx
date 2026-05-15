@@ -34,6 +34,12 @@ export async function SiteHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <Link
+            href="/ticket-sites"
+            className="inline-flex h-9 items-center rounded-full bg-[color:var(--color-primary)] px-3 text-xs font-bold tracking-[var(--tracking-button)] text-[color:var(--color-primary-foreground)] transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--color-ring)] sm:px-4 sm:text-sm"
+          >
+            티켓사이트 가입!!
+          </Link>
           <ThemeToggle />
         </div>
       </div>
