@@ -35,6 +35,8 @@ import {
   deleteVendor,
   updateVendor,
 } from "@/lib/vendors/repo";
+import { isUniqueViolation } from "@/lib/prisma-errors";
+import { isPositiveInt as isValidVendorId } from "@/lib/utils";
 
 // =====================================================================
 // 응답 타입
@@ -64,25 +66,9 @@ const VENDOR_IN_USE_MESSAGE = "사용 중인 발매처는 삭제할 수 없습�
 // 헬퍼
 // =====================================================================
 
-/** vendorId 가 양의 정수인지 검증. */
-function isValidVendorId(vendorId: unknown): vendorId is number {
-  return (
-    typeof vendorId === "number" &&
-    Number.isInteger(vendorId) &&
-    vendorId > 0
-  );
-}
-
 /** Prisma P2002 (slug unique violation) 또는 repo 의 "이미 사용 중인 slug" 메시지 판별. */
 function isSlugTakenError(err: unknown): boolean {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
-  ) {
-    return true;
-  }
+  if (isUniqueViolation(err)) return true;
   return (
     err instanceof Error && err.message.includes("이미 사용 중인 slug")
   );

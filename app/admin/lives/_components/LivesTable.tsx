@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-import { formatJstDateTime } from "@/lib/admin/format-jst";
+import { formatJstDateTime } from "@/lib/jst";
 
 import { StatusBadge } from "./StatusBadge";
 

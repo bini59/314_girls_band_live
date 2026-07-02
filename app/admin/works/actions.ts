@@ -21,6 +21,8 @@ import {
   deleteWork as deleteWorkRepo,
   updateWork as updateWorkRepo,
 } from "@/lib/works/repo";
+import { isUniqueViolation } from "@/lib/prisma-errors";
+import { isPositiveInt as isValidId } from "@/lib/utils";
 
 export type WorkMutationResult =
   | { ok: true; work: Work }
@@ -39,19 +41,8 @@ const SLUG_TAKEN_MESSAGE = "이미 사용 중인 slug 입니다.";
 const INVALID_SERIES_MESSAGE = "존재하지 않는 시리즈입니다.";
 const WORK_IN_USE_MESSAGE = "사용 중인 작품은 삭제할 수 없습니다.";
 
-function isValidId(id: unknown): id is number {
-  return typeof id === "number" && Number.isInteger(id) && id > 0;
-}
-
 function isSlugTakenError(err: unknown): boolean {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
-  ) {
-    return true;
-  }
+  if (isUniqueViolation(err)) return true;
   return err instanceof Error && err.message.includes("이미 사용 중인 slug");
 }
 

@@ -23,6 +23,8 @@ import {
   deleteBand as deleteBandRepo,
   updateBand as updateBandRepo,
 } from "@/lib/band/repo";
+import { isUniqueViolation } from "@/lib/prisma-errors";
+import { isPositiveInt as isValidId } from "@/lib/utils";
 
 export type BandMutationResult =
   | { ok: true; band: Band }
@@ -41,19 +43,8 @@ const SLUG_TAKEN_MESSAGE = "이미 사용 중인 slug 입니다.";
 const INVALID_WORK_MESSAGE = "존재하지 않는 작품입니다.";
 const BAND_IN_USE_MESSAGE = "출연 이력이 있는 밴드는 삭제할 수 없습니다.";
 
-function isValidId(id: unknown): id is number {
-  return typeof id === "number" && Number.isInteger(id) && id > 0;
-}
-
 function isSlugTakenError(err: unknown): boolean {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
-  ) {
-    return true;
-  }
+  if (isUniqueViolation(err)) return true;
   return err instanceof Error && err.message.includes("이미 사용 중인 slug");
 }
 

@@ -10,15 +10,9 @@
 import type { Prisma, Series, Work } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 export type WorkWithSeries = Work & { series: Series | null };
-
-function getPrismaErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    return (err as { code?: string }).code;
-  }
-  return undefined;
-}
 
 /** nameKo asc + series include. */
 export async function listWorks(): Promise<WorkWithSeries[]> {

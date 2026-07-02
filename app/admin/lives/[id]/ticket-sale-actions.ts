@@ -41,6 +41,8 @@ import {
   type UpdateTicketSalePatch,
 } from "@/lib/ticket-sale/repo";
 import { getLiveById } from "@/lib/live/repo";
+import { isForeignKeyViolation } from "@/lib/prisma-errors";
+import { isPositiveInt as isValidPositiveInt } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
 // 타입.
@@ -114,10 +116,6 @@ const SET_TIERS_FAILURE_MESSAGE = "티어 매핑 갱신에 실패했습니다.";
 // 헬퍼.
 // ---------------------------------------------------------------------------
 
-function isValidPositiveInt(v: unknown): v is number {
-  return typeof v === "number" && Number.isInteger(v) && v > 0;
-}
-
 /** repo 가 throw 하는 "본 라이브에 속하지 않는 티어" 패턴 매칭. */
 function isForeignTierError(err: unknown): boolean {
   return (
@@ -132,16 +130,6 @@ function isNotFoundError(err: unknown): boolean {
   return (
     err instanceof Error &&
     (err.message.includes("찾을 수 없") || err.message.includes("삭제됨"))
-  );
-}
-
-/** Prisma P2003 (FK 위배) 판별 — vendor / live 외래키 누락. */
-function isForeignKeyViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2003"
   );
 }
 
@@ -178,7 +166,7 @@ function normalizeJstFields<T extends TicketSaleFormInput>(input: T): T {
  * 직렬화 — Date → ISO 문자열로 평탄화한다.
  *
  * 클라이언트가 새 Date 객체를 만들면 표시 시점에 호스트 TZ 영향을 받으므로,
- * `lib/admin/format-jst.ts` 의 `formatJstDateTime()` 이 ISO 문자열을 직접 받는다.
+ * `lib/jst.ts` 의 `formatJstDateTime()` 이 ISO 문자열을 직접 받는다.
  */
 function serializeSale(sale: {
   id: number;

@@ -7,13 +7,7 @@
 import type { Series } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-
-function getPrismaErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    return (err as { code?: string }).code;
-  }
-  return undefined;
-}
+import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 /** nameKo asc 로 정렬된 series 목록. */
 export async function listSeries(): Promise<Series[]> {

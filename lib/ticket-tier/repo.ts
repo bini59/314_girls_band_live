@@ -9,16 +9,7 @@
 import type { TicketTier } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-
-/** Prisma not-found (record-to-delete) 판별. */
-function isNotFoundError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2025"
-  );
-}
+import { isNotFoundError } from "@/lib/prisma-errors";
 
 /**
  * format 의 tier 목록.
