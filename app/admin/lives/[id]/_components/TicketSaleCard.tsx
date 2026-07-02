@@ -10,7 +10,7 @@
  */
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { formatJstDateTime } from "@/lib/admin/format-jst";
+import { formatJstDateTime } from "@/lib/jst";
 
 import type { SerializedTicketSale } from "../ticket-sale-actions";
 import {

@@ -10,6 +10,7 @@
 import type { Live, LiveStatus, LiveType, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { isUniqueViolation } from "@/lib/prisma-errors";
 
 const DEFAULT_LIST_LIMIT = 50;
 const MAX_SLUG_SUFFIX_ATTEMPTS = 50;
@@ -86,16 +87,6 @@ export async function createLive(input: CreateLiveInput): Promise<Live> {
   }
   throw new Error(
     `createLive: slug "${baseSlug}" 의 고유 suffix 를 찾지 못했습니다 (시도 ${MAX_SLUG_SUFFIX_ATTEMPTS}회).`
-  );
-}
-
-/** Prisma unique violation 인지 판별. */
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
   );
 }
 

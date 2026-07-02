@@ -10,16 +10,13 @@
  */
 import { z } from "zod";
 
-/**
- * JST datetime-local 형식 (`YYYY-MM-DDTHH:mm`) 정규식.
- *
- * - 4자리 연도 + `-` + 2자리 월 + `-` + 2자리 일 + `T` + 2자리 시 + `:` + 2자리 분
- * - 초/ms 불허, 공백 구분자 불허
- *
- * regex 만으로는 `2026-13-99T25:99` 같은 의미상 무효도 통과시킬 수 있으므로
- * 호출자가 `new Date()` 검증을 추가로 수행해야 한다.
- */
-export const JST_DATETIME_LOCAL_REGEX = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
+import {
+  JST_DATETIME_LOCAL_REGEX,
+  jstDateTimeLocalString,
+} from "./_jst";
+
+// tour.ts / live.test.ts 가 `./live` 에서 이 regex 를 import 하므로 재노출.
+export { JST_DATETIME_LOCAL_REGEX };
 
 /** Slug 형식: kebab-case ASCII (대문자/언더스코어/공백 불허). */
 const SLUG_REGEX = /^[a-z0-9-]+$/;
@@ -27,43 +24,6 @@ const SLUG_REGEX = /^[a-z0-9-]+$/;
 /** LiveType enum — Prisma schema 와 동일. */
 export const liveTypeSchema = z.enum(["SOLO", "TAIBAN", "FES"]);
 export type LiveTypeInput = z.infer<typeof liveTypeSchema>;
-
-/**
- * JST datetime-local 문자열 zod 스키마.
- *
- * 1) regex 검증
- * 2) 의미상 유효성: `new Date(${value}:00+09:00)` 가 NaN 이 아닌지
- *
- * 빈 문자열은 허용하지 않는다 — 호출자가 optional 처리.
- */
-const jstDateTimeLocalString = z
-  .string()
-  .regex(JST_DATETIME_LOCAL_REGEX, {
-    message:
-      "JST datetime-local 형식이어야 합니다 (YYYY-MM-DDTHH:mm).",
-  })
-  .superRefine((val, ctx) => {
-    // 의미상 유효 (regex 만으로는 2026-13-99T25:99 같은 입력을 못 거름).
-    const d = new Date(`${val}:00+09:00`);
-    if (Number.isNaN(d.getTime())) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "유효한 날짜/시간이 아닙니다.",
-      });
-      return;
-    }
-    // 추가 검증: `2026-02-30T18:00` 처럼 JS Date 가 보정해버리는 경우 차단.
-    // toISOString 의 앞부분이 입력과 다르면 보정된 것이므로 거부.
-    // JST → UTC 변환 후 다시 JST 로 환산하여 비교.
-    const shiftedToJst = new Date(d.getTime() + 9 * 60 * 60 * 1000);
-    const echo = shiftedToJst.toISOString().slice(0, 16);
-    if (echo !== val) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "유효한 날짜/시간이 아닙니다.",
-      });
-    }
-  });
 
 /**
  * 공통 필드 스키마 (create 와 update 가 공유).

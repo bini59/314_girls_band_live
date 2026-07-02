@@ -8,14 +8,7 @@
 import type { Vendor } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-
-/** Prisma error code 판별. */
-function getPrismaErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    return (err as { code?: string }).code;
-  }
-  return undefined;
-}
+import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 /** name asc 로 정렬된 vendor 목록. */
 export async function listVendors(): Promise<Vendor[]> {

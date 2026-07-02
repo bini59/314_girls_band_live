@@ -27,6 +27,7 @@ import {
   updateTicketTier,
   type UpdateTicketTierPatch,
 } from "@/lib/ticket-tier/repo";
+import { isPositiveInt as isValidId } from "@/lib/utils";
 import {
   ticketTierCreateSchema,
   ticketTierReorderSchema,
@@ -57,11 +58,6 @@ const REORDER_FAILURE_MESSAGE = "티어 순서 변경에 실패했습니다.";
 const REORDER_CROSS_FORMAT_MESSAGE =
   "다른 포맷의 티어가 포함되어 있습니다.";
 const REORDER_EMPTY_MESSAGE = "정렬 대상이 1개 이상 필요합니다.";
-
-/** 양의 정수 ID 검증. */
-function isValidId(id: unknown): id is number {
-  return typeof id === "number" && Number.isInteger(id) && id > 0;
-}
 
 /** TicketTier DB row → DTO 변환. */
 function toDto(tier: {
