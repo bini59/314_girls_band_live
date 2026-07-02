@@ -15,6 +15,7 @@ import type { Band, Work } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { ConflictError } from "@/lib/errors";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 export type BandWithWork = Band & { work: Work };
@@ -129,10 +130,10 @@ export async function createBand(input: CreateBandInput): Promise<Band> {
   } catch (err) {
     const code = getPrismaErrorCode(err);
     if (code === "P2002") {
-      throw new Error(`이미 사용 중인 slug 입니다: "${input.slug}".`);
+      throw new ConflictError(`이미 사용 중인 slug 입니다: "${input.slug}".`);
     }
     if (code === "P2003") {
-      throw new Error("존재하지 않는 작품입니다.");
+      throw new ConflictError("존재하지 않는 작품입니다.");
     }
     throw err;
   }
@@ -184,10 +185,10 @@ export async function updateBand(
   } catch (err) {
     const code = getPrismaErrorCode(err);
     if (code === "P2002") {
-      throw new Error("이미 사용 중인 slug 입니다.");
+      throw new ConflictError("이미 사용 중인 slug 입니다.");
     }
     if (code === "P2003") {
-      throw new Error("존재하지 않는 작품입니다.");
+      throw new ConflictError("존재하지 않는 작품입니다.");
     }
     throw err;
   }

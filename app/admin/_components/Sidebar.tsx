@@ -25,6 +25,7 @@ const ITEMS: NavItem[] = [
   { label: "투어", href: "/admin/tours" },
   { label: "밴드", href: "/admin/bands" },
   { label: "판매처", href: "/admin/vendors" },
+  { label: "API 키", href: "/admin/api-keys" },
 ];
 
 export function Sidebar() {
