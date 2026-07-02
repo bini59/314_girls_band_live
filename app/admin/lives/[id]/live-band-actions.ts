@@ -28,6 +28,8 @@ import {
   updateLiveBand,
 } from "@/lib/live-band/repo";
 import { getBandById, searchBands } from "@/lib/band/repo";
+import { isUniqueViolation } from "@/lib/prisma-errors";
+import { isPositiveInt } from "@/lib/utils";
 import {
   liveBandReorderSchema,
   liveBandUpsertSchema,
@@ -78,21 +80,9 @@ const MAX_SEARCH_QUERY_LENGTH = 100;
 // 헬퍼
 // =====================================================================
 
-/** 양의 정수 검증. */
-function isPositiveInt(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value > 0;
-}
-
 /** Prisma P2002 (composite PK 중복) 또는 repo 가 던진 "이미 추가된 밴드" 메시지 판별. */
 function isDuplicateLiveBandError(err: unknown): boolean {
-  if (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
-  ) {
-    return true;
-  }
+  if (isUniqueViolation(err)) return true;
   return (
     err instanceof Error && err.message.includes("이미 추가된 밴드")
   );

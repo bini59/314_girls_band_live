@@ -10,16 +10,7 @@
 import type { Band, LiveBand } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
-
-/** Prisma unique violation 인지 판별. */
-function isUniqueViolation(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "code" in err &&
-    (err as { code?: string }).code === "P2002"
-  );
-}
+import { isUniqueViolation } from "@/lib/prisma-errors";
 
 /**
  * 라이브의 출연 밴드 목록.

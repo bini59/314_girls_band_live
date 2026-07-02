@@ -11,19 +11,13 @@
 import type { Prisma, Tour, TourStatus, Work } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 export type TourWithWork = Tour & { work: Work };
 export type TourWithCounts = Tour & {
   work: Work;
   _count: { lives: number };
 };
-
-function getPrismaErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    return (err as { code?: string }).code;
-  }
-  return undefined;
-}
 
 /** nameKo asc + work include + lives 카운트. */
 export async function listTours(): Promise<TourWithCounts[]> {

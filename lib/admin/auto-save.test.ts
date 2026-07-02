@@ -11,7 +11,6 @@
  *      .retry()            : 수동 재시도
  *      .getState()         : 현재 상태 스냅샷
  *      .subscribe(listener): 상태 변경 알림
- *  - withRetry(fn, opts): 지수 백오프 (1s/3s/9s, max 3회)
  *
  * 핵심 행동:
  *  - 디바운스: 800ms 동안 추가 입력 시 타이머 리셋, 마지막 입력만 저장
@@ -28,7 +27,7 @@ import {
   vi,
 } from "vitest";
 
-import { createAutoSaveController, withRetry } from "./auto-save";
+import { createAutoSaveController } from "./auto-save";
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -36,69 +35,6 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
-});
-
-describe("withRetry — 지수 백오프 재시도", () => {
-  it("1회 실패 후 1s 대기 → 성공", async () => {
-    let calls = 0;
-    const fn = vi.fn(async () => {
-      calls += 1;
-      if (calls === 1) throw new Error("transient");
-      return "ok";
-    });
-
-    const promise = withRetry(fn, { maxRetries: 3, backoffMs: [1000, 3000, 9000] });
-    // 첫 호출은 즉시
-    await vi.advanceTimersByTimeAsync(0);
-    expect(fn).toHaveBeenCalledTimes(1);
-
-    // 1s 후 재시도
-    await vi.advanceTimersByTimeAsync(1000);
-    const result = await promise;
-
-    expect(result).toBe("ok");
-    expect(fn).toHaveBeenCalledTimes(2);
-  });
-
-  it("2회 실패 후 3s 대기 → 성공 (총 1+3=4s 대기)", async () => {
-    let calls = 0;
-    const fn = vi.fn(async () => {
-      calls += 1;
-      if (calls < 3) throw new Error("transient");
-      return "ok";
-    });
-
-    const promise = withRetry(fn, { maxRetries: 3, backoffMs: [1000, 3000, 9000] });
-    await vi.advanceTimersByTimeAsync(0);
-    expect(fn).toHaveBeenCalledTimes(1);
-
-    await vi.advanceTimersByTimeAsync(1000);
-    expect(fn).toHaveBeenCalledTimes(2);
-
-    await vi.advanceTimersByTimeAsync(3000);
-    const result = await promise;
-    expect(result).toBe("ok");
-    expect(fn).toHaveBeenCalledTimes(3);
-  });
-
-  it("3회 모두 실패 시 마지막 에러 throw", async () => {
-    const fn = vi.fn(async () => {
-      throw new Error("permanent");
-    });
-
-    const promise = withRetry(fn, { maxRetries: 3, backoffMs: [1000, 3000, 9000] });
-
-    // promise 가 reject 되도록 명시적 catch
-    const rejection = expect(promise).rejects.toThrow("permanent");
-
-    await vi.advanceTimersByTimeAsync(0);
-    await vi.advanceTimersByTimeAsync(1000);
-    await vi.advanceTimersByTimeAsync(3000);
-    await vi.advanceTimersByTimeAsync(9000);
-
-    await rejection;
-    expect(fn).toHaveBeenCalledTimes(3);
-  });
 });
 
 describe("createAutoSaveController — 디바운스", () => {

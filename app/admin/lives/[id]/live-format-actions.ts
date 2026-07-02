@@ -24,6 +24,7 @@ import {
   type UpdateLiveFormatPatch,
 } from "@/lib/live-format/repo";
 import { prisma } from "@/lib/db";
+import { isPositiveInt as isValidId } from "@/lib/utils";
 import type { LiveFormat, LiveFormatType } from "@prisma/client";
 
 /** 직렬화된 LiveFormat (Date 가 없으므로 그대로 사용 가능). */
@@ -48,11 +49,6 @@ const FORMAT_NOT_FOUND_MESSAGE = "포맷을 찾을 수 없습니다.";
 const CREATE_FAILURE_MESSAGE = "포맷 등록에 실패했습니다.";
 const UPDATE_FAILURE_MESSAGE = "포맷 수정에 실패했습니다.";
 const DELETE_FAILURE_MESSAGE = "포맷 삭제에 실패했습니다.";
-
-/** 양의 정수인지 검증. */
-function isValidId(id: unknown): id is number {
-  return typeof id === "number" && Number.isInteger(id) && id > 0;
-}
 
 /** 빈 문자열을 null 로 정규화. undefined 는 그대로. */
 function normalizeOptional(v: string | undefined): string | null | undefined {

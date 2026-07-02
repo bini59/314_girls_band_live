@@ -14,6 +14,7 @@ import {
   updateLive,
   type UpdateLiveInput,
 } from "@/lib/live/repo";
+import { isPositiveInt as isValidLiveId } from "@/lib/utils";
 
 /**
  * 자동저장 응답 형식.
@@ -72,13 +73,6 @@ function isNotFoundError(err: unknown): boolean {
   return (
     err instanceof Error &&
     (err.message.includes("찾을 수 없") || err.message.includes("삭제됨"))
-  );
-}
-
-/** liveId 가 양의 정수인지 검증. */
-function isValidLiveId(liveId: unknown): liveId is number {
-  return (
-    typeof liveId === "number" && Number.isInteger(liveId) && liveId > 0
   );
 }
 

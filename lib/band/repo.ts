@@ -15,15 +15,9 @@ import type { Band, Work } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
+import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
 export type BandWithWork = Band & { work: Work };
-
-function getPrismaErrorCode(err: unknown): string | undefined {
-  if (typeof err === "object" && err !== null && "code" in err) {
-    return (err as { code?: string }).code;
-  }
-  return undefined;
-}
 
 const DEFAULT_SEARCH_LIMIT = 20;
 const MAX_SEARCH_LIMIT = 50;
