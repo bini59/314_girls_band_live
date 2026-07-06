@@ -73,7 +73,7 @@ jobs:
   #   - 러너는 `gbl-prod` 라벨로 등록 권장 (다른 self-hosted 러너와 분리).
   # ---------------------------------------------------------------------------
   deploy:
-    name: Blue/Green deploy (self-hosted)
+    name: Deploy (self-hosted)
     needs: build-and-push
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: [self-hosted, linux, gbl-prod]
@@ -94,19 +94,20 @@ jobs:
       - name: Log in to GHCR (for image pull)
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
 
-      - name: Bootstrap nginx + postgres if not running
-        run: |
-          if ! docker compose ps --services --filter "status=running" | grep -q '^nginx$'; then
-            echo "Bootstrapping postgres + nginx + app-blue (first run)"
-            APP_IMAGE="ghcr.io/${{ github.repository }}:sha-${{ github.sha }}" \
-              docker compose --profile app up -d postgres nginx app-blue
-          fi
+      - name: Ensure postgres running
+        run: docker compose up -d postgres
 
-      - name: Blue/Green deploy
+      - name: Deploy (pull image → migrate → restart)
         env:
-          IMAGE_TAG: sha-${{ github.sha }}
-          IMAGE_REPO: ghcr.io/${{ github.repository }}
-        run: ./scripts/deploy-blue-green.sh
+          APP_IMAGE: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+        run: |
+          docker compose --profile app pull gbl
+          # DB 마이그레이션 (idempotent) — gbl 서비스 정의로 .env(DATABASE_URL 등) 주입.
+          # -u 0:0 / HOME=/tmp: npx 캐시 쓰기 권한 회피. --no-deps: postgres 재기동 방지.
+          docker compose --profile app run --rm --no-deps \
+            -u 0:0 -e HOME=/tmp --entrypoint sh gbl \
+            -c "cd /tmp && npx -y prisma@5.22.0 migrate deploy --schema=/app/prisma/schema.prisma"
+          docker compose --profile app up -d gbl
 
       - name: Cleanup old images
         run: docker image prune -f

@@ -33,50 +33,25 @@ services:
         condition: service_healthy
 
   # ============================================================================
-  # nginx 리버스 프록시 — blue/green 배포의 트래픽 스위치 역할.
+  # Next.js 앱 (production 빌드). 단일 컨테이너.
   #
-  # - 외부 트래픽은 nginx 만 노출 (`${APP_PORT:-3001}:80`).
-  # - app-blue / app-green 은 호스트 포트를 노출하지 않고 내부 네트워크에서만 접근.
-  # - 활성 색은 `nginx/conf.d/active-upstream.conf` 의 `server app-XXX:3000;` 한 줄로 표현.
-  # - 배포 스크립트가 이 파일을 갱신한 뒤 `nginx -s reload` 로 무중단 전환.
+  # 라우팅: CF 터널이 도커 네트워크에서 `gbl:3000` 으로 직접 붙는다 (nginx 게이트웨이 없음).
+  # 호스트 노출 `${APP_PORT:-31401}:3000` 은 직접 접근/디버그용.
   #
-  # 무중단 보장:
-  #   - nginx reload 는 워커 graceful 재시작 → 기존 연결은 구버전으로 drain, 신규는 신버전.
-  #   - 새 색 컨테이너가 healthy 상태가 된 뒤에만 upstream 전환.
+  # 배포: 이미지 교체 후 재기동 (~1-3초 blip). 무중단 불필요 판단 —
+  # 저트래픽 아카이브 + 월 단위 배포 + 앱 부팅 ~0.2s 라 blue/green 비용이 이득을 상회.
+  # HEALTHCHECK 는 Dockerfile 에 정의됨.
   # ============================================================================
-  nginx:
-    profiles: ["app"]
-    image: nginx:1.27-alpine
-    container_name: gbl-nginx
-    restart: unless-stopped
-    ports:
-      - "${APP_PORT:-3001}:80"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-    healthcheck:
-      test: ["CMD", "wget", "-q", "-O", "-", "http://127.0.0.1/healthz"]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-
-  # ============================================================================
-  # 어드민 Next.js 앱 (production 빌드, blue/green).
-  #
-  # 평상시에는 두 색 중 하나만 running. 배포 시 반대 색을 띄워 healthy 가 되면
-  # nginx upstream 을 전환한 뒤 구버전을 stop 한다.
-  #
-  # 직접 실행하지 말 것 — 항상 `scripts/deploy-blue-green.sh` 경유.
-  # 최초 부트스트랩만 `docker compose --profile app up -d app-blue nginx`.
-  # ============================================================================
-  app-blue: &app-template
+  gbl:
     profiles: ["app"]
     build:
       context: .
       dockerfile: Dockerfile
     image: ${APP_IMAGE:-girls-band-live:local}
-    container_name: gbl-app-blue
+    container_name: gbl
     restart: unless-stopped
+    ports:
+      - "${APP_PORT:-31401}:3000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public
       ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?must set ADMIN_PASSWORD_HASH (see README)}
@@ -86,10 +61,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-
-  app-green:
-    <<: *app-template
-    container_name: gbl-app-green
 
 volumes:
   postgres_data:
