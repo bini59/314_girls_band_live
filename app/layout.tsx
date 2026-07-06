@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { GoogleTagManager } from "@next/third-parties/google";
 
 import { ThemeScript } from "@/components/theme/theme-script";
 
 import "./globals.css";
+
+// GTM 컨테이너 ID (공개값). GA4 측정 ID(G-M3T40FCMQZ)는 GTM 컨테이너에서 관리.
+const GTM_ID = "GTM-W8CC3949";
 
 export const metadata: Metadata = {
   title: "원정가고싶다",
@@ -19,6 +23,7 @@ export default function RootLayout({
       <head>
         <ThemeScript />
       </head>
+      {process.env.NODE_ENV === "production" && <GoogleTagManager gtmId={GTM_ID} />}
       <body>{children}</body>
     </html>
   );
