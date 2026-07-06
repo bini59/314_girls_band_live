@@ -84,9 +84,9 @@ pnpm prisma:migrate:deploy
 # 4. 환경변수 inject 해서 app 컨테이너 빌드/기동
 ADMIN_PASSWORD_HASH='$2a$12$....hash..' \
 JWT_SECRET='....64hex..' \
-docker compose --profile app up -d --build app
+docker compose --profile app up -d --build gbl
 
-# 5. http://localhost:3001 로 접속 (APP_PORT 환경변수로 변경 가능)
+# 5. http://localhost:31401 로 접속 (APP_PORT 환경변수로 변경 가능)
 ```
 
 ### 환경별 시크릿 주입 패턴
