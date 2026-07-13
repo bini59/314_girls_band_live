@@ -8,6 +8,28 @@ import { LiveCard } from "@/components/site/live-card";
 
 type Params = Promise<{ slug: string }>;
 
+function LiveSection({
+  title,
+  lives,
+}: {
+  title: string;
+  lives: Awaited<ReturnType<typeof getLivesByBandSlug>>;
+}) {
+  if (lives.length === 0) return null;
+  return (
+    <section className="mb-6">
+      <h2 className="mb-3 text-lg font-semibold">
+        {title} {lives.length}건
+      </h2>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {lives.map((live) => (
+          <LiveCard key={live.id} live={live} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default async function BandPage({ params }: { params: Params }) {
   const { slug } = await params;
   const [band, lives] = await Promise.all([
@@ -16,7 +38,17 @@ export default async function BandPage({ params }: { params: Params }) {
   ]);
   if (!band) notFound();
 
-  const liveCount = lives.length;
+  // 종료 기준: 종료 시각(없으면 시작 시각)이 현재보다 과거면 종료된 라이브.
+  const now = Date.now();
+  const endedAt = (live: (typeof lives)[number]) =>
+    new Date(live.endAt ?? live.startAt).getTime();
+  const upcoming = lives
+    .filter((live) => endedAt(live) >= now)
+    .sort(
+      (a, b) =>
+        new Date(a.startAt).getTime() - new Date(b.startAt).getTime()
+    ); // 시작 임박순
+  const ended = lives.filter((live) => endedAt(live) < now); // 쿼리에서 이미 최신순(desc)
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
@@ -57,20 +89,18 @@ export default async function BandPage({ params }: { params: Params }) {
         </div>
       </header>
 
-      <section className="mb-6">
-        <h2 className="mb-3 text-lg font-semibold">라이브 {liveCount}건</h2>
-        {liveCount === 0 ? (
+      {lives.length === 0 ? (
+        <section className="mb-6">
           <p className="rounded-[var(--radius-lg)] border border-dashed border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
             아직 등록된 라이브가 없습니다.
           </p>
-        ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {lives.map((live) => (
-              <LiveCard key={live.id} live={live} />
-            ))}
-          </div>
-        )}
-      </section>
+        </section>
+      ) : (
+        <>
+          <LiveSection title="진행 예정" lives={upcoming} />
+          <LiveSection title="종료된 라이브" lives={ended} />
+        </>
+      )}
 
       <CalendarSubscribe feedPath={`/api/calendar?band=${encodeURIComponent(band.slug)}`} />
     </main>
