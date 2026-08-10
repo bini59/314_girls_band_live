@@ -1,7 +1,7 @@
 /**
  * Card — Spotify 영감 카드 컨테이너.
  *
- * 디자인 규칙 (.claude/DESIGN.md §4):
+ * 디자인 규칙: 카드 내부 여백과 경계 스타일을 일관되게 유지한다.
  *   - 8px radius, 가시 보더 없음
  *   - 배경은 surface (--color-background)
  *   - 호버 시 옅은 elevation

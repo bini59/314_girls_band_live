@@ -1,7 +1,7 @@
 /**
  * Input — Spotify 영감 텍스트 입력.
  *
- * 디자인 규칙 (.claude/DESIGN.md §4, §6):
+ * 디자인 규칙: 입력 상태와 포커스 표시를 일관되게 유지한다.
  *   - 폼 인풋은 subtle radius(4px)
  *   - 보더는 라인 대신 inset box-shadow 로 "오목한" 촉각 부여
  *   - 포커스 시 그린 ring (focus-ring) overlay
