@@ -82,6 +82,12 @@ jobs:
     permissions:
       contents: read
       packages: read
+    env:
+      AUTH_ORIGIN: https://auth.bini59.dev
+      CLIENT_ID: gbl
+      APP_ORIGIN: https://band-live.bini59.dev
+      AUTH_REQUIRED_ROLE: admin
+      APP_SECRET: ${{ secrets.GBL_APP_SECRET }}
     defaults:
       run:
         working-directory: ${{ vars.DEPLOY_PATH || '/opt/girls_band_live' }}
@@ -100,11 +106,6 @@ jobs:
       - name: Deploy (pull image → migrate → restart)
         env:
           APP_IMAGE: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
-          AUTH_ORIGIN: https://auth.bini59.dev
-          CLIENT_ID: gbl
-          APP_ORIGIN: https://band-live.bini59.dev
-          AUTH_REQUIRED_ROLE: admin
-          APP_SECRET: ${{ secrets.GBL_APP_SECRET }}
         run: |
           docker compose --profile app pull gbl
           # DB 마이그레이션 (idempotent) — gbl 서비스 정의로 .env(DATABASE_URL 등) 주입.
