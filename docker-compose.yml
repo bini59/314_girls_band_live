@@ -54,8 +54,11 @@ services:
       - "${APP_PORT:-31401}:3000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-gbl}:${POSTGRES_PASSWORD:-gbl_dev_password}@postgres:5432/${POSTGRES_DB:-girls_band_live}?schema=public
-      ADMIN_PASSWORD_HASH: ${ADMIN_PASSWORD_HASH:?must set ADMIN_PASSWORD_HASH (see README)}
-      JWT_SECRET: ${JWT_SECRET:?must set JWT_SECRET (>=32 bytes hex)}
+      AUTH_ORIGIN: ${AUTH_ORIGIN:?must set AUTH_ORIGIN}
+      CLIENT_ID: ${CLIENT_ID:?must set CLIENT_ID}
+      APP_ORIGIN: ${APP_ORIGIN:?must set APP_ORIGIN}
+      AUTH_REQUIRED_ROLE: ${AUTH_REQUIRED_ROLE:-admin}
+      APP_SECRET: ${APP_SECRET:?must set APP_SECRET}
       NODE_ENV: production
       TZ: Asia/Tokyo
     depends_on:
