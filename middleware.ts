@@ -58,7 +58,14 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     const sid = req.cookies.get("sid")?.value;
     const result = await verifyRemoteSession(sid ?? "");
     if (result.kind === "unauthenticated") {
-      return NextResponse.redirect(buildAuthLoginUrl(req.url));
+      const appOrigin = process.env.APP_ORIGIN;
+      const returnTo = appOrigin
+        ? new URL(
+            `${req.nextUrl.pathname}${req.nextUrl.search}`,
+            appOrigin
+          ).toString()
+        : req.url;
+      return NextResponse.redirect(buildAuthLoginUrl(returnTo));
     }
     if (result.kind === "forbidden") {
       return NextResponse.rewrite(new URL("/admin/access-denied", req.url));
