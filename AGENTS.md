@@ -18,7 +18,7 @@
 
 ## 브랜치 / 릴리즈
 
-`feature/* → dev → (PR) → main`. **main push = 즉시 자동 배포**(GHCR + blue/green). `ci.yml`은 push→dev, PR→main에서 lint/typecheck/vitest.
+`feature/* → (PR) → main`. **main push = 즉시 자동 배포**(GHCR + blue/green). `ci.yml`은 PR→main에서 lint/typecheck/vitest. main 직접 push 금지.
 릴리즈·핫픽스·롤백 절차는 `release` 스킬(`.agents/skills/release/SKILL.md`). 티켓→머지 전체를 한 번에 진행할 때는 `dev-flow` 스킬을 쓸 수 있다(일반 수정에 필수는 아님).
 
 ## graphify
@@ -28,4 +28,4 @@
 
 ## git push 인증
 
-`git push` 403(`kevin-lim59`)이면 `unset GITHUB_TOKEN && git push origin dev`.
+`git push` 403(`kevin-lim59`)이면 `unset GITHUB_TOKEN && git push`.
