@@ -4,6 +4,12 @@ import {
   SESSION_COOKIE_NAME,
   verifySession,
 } from "@/lib/auth/session";
+import {
+  buildAuthLoginUrl,
+  hasPartialRemoteAuthConfiguration,
+  isRemoteAuthConfigured,
+  verifyRemoteSession,
+} from "@/lib/auth/remote";
 
 /**
  * Admin authentication gate.
@@ -32,9 +38,46 @@ export async function middleware(req: NextRequest): Promise<NextResponse> {
     return NextResponse.next();
   }
 
+  if (
+    pathname === "/admin/access-denied" ||
+    pathname === "/admin/auth-unavailable"
+  ) {
+    return NextResponse.next();
+  }
+
   // /admin/api/* — APIs validate authentication on their own.
   if (pathname.startsWith("/admin/api/")) {
     return NextResponse.next();
+  }
+
+  if (hasPartialRemoteAuthConfiguration()) {
+    return NextResponse.redirect(new URL("/admin/auth-unavailable", req.url));
+  }
+
+  if (isRemoteAuthConfigured()) {
+    const sid = req.cookies.get("sid")?.value;
+    const result = await verifyRemoteSession(sid ?? "");
+    if (result.kind === "unauthenticated") {
+      const appOrigin = process.env.APP_ORIGIN;
+      const returnTo = appOrigin
+        ? new URL(
+            `${req.nextUrl.pathname}${req.nextUrl.search}`,
+            appOrigin
+          ).toString()
+        : req.url;
+      return NextResponse.redirect(buildAuthLoginUrl(returnTo));
+    }
+    if (result.kind === "forbidden") {
+      return NextResponse.rewrite(new URL("/admin/access-denied", req.url));
+    }
+    if (result.kind === "unavailable") {
+      return NextResponse.rewrite(new URL("/admin/auth-unavailable", req.url));
+    }
+    return NextResponse.next({
+      request: {
+        headers: new Headers(req.headers),
+      },
+    });
   }
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;

@@ -11,6 +11,15 @@ const GTM_ID = "GTM-W8CC3949";
 export const metadata: Metadata = {
   title: "원정가고싶다",
   description: "애니/게임 기반 걸즈밴드 라이브 일정 아카이브",
+  icons: {
+    icon: [16, 32, 64, 128, 256, 512].map((size) => ({
+      url: `https://static.bini59.dev/logo/logo-${size}.png`,
+      sizes: `${size}x${size}`,
+      type: "image/png",
+    })),
+    shortcut: "https://static.bini59.dev/logo/logo-32.png",
+    apple: "https://static.bini59.dev/logo/logo-512.png",
+  },
 };
 
 export default function RootLayout({

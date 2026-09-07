@@ -7,6 +7,14 @@ import {
   verifySession,
   type SessionPayload,
 } from "./session";
+import {
+  hasPartialRemoteAuthConfiguration,
+  isRemoteAuthConfigured,
+  verifyRemoteSession,
+} from "./remote";
+
+const ACCESS_DENIED_PATH = "/admin/access-denied";
+const AUTH_UNAVAILABLE_PATH = "/admin/auth-unavailable";
 
 /**
  * 어드민 세션을 강제로 검증한다.
@@ -19,6 +27,20 @@ import {
  * 모든 어드민 Server Action / Server Component 의 첫 줄에서 호출한다.
  */
 export async function requireAdminSession(): Promise<SessionPayload> {
+  if (hasPartialRemoteAuthConfiguration()) {
+    redirect(AUTH_UNAVAILABLE_PATH);
+  }
+
+  if (isRemoteAuthConfigured()) {
+    const cookieStore = await cookies();
+    const sid = cookieStore.get("sid")?.value;
+    const result = await verifyRemoteSession(sid ?? "");
+    if (result.kind === "unauthenticated") redirect("/admin/login");
+    if (result.kind === "forbidden") redirect(ACCESS_DENIED_PATH);
+    if (result.kind === "unavailable") redirect(AUTH_UNAVAILABLE_PATH);
+    return { sub: result.userId, role: "ADMIN" };
+  }
+
   const session = await readSession();
   if (!session) {
     redirect(ADMIN_LOGIN_PATH);
@@ -40,6 +62,14 @@ export async function requireAdminSession(): Promise<SessionPayload> {
  * - 절대 redirect / throw 하지 않는다.
  */
 export async function getOptionalAdminSession(): Promise<SessionPayload | null> {
+  if (isRemoteAuthConfigured()) {
+    const cookieStore = await cookies();
+    const sid = cookieStore.get("sid")?.value;
+    const result = await verifyRemoteSession(sid ?? "");
+    return result.kind === "authenticated"
+      ? { sub: result.userId, role: "ADMIN" }
+      : null;
+  }
   return await readSession();
 }
 

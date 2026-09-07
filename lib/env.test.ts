@@ -14,11 +14,11 @@ describe("Vitest sanity", () => {
 });
 
 // ---------------------------------------------------------------------------
-// parseEnv: production 환경에서 secret 필수
+// parseEnv: production 환경에서 321_auth SSO 설정 필수
 // ---------------------------------------------------------------------------
 //
 // 보안 강화 요구사항 (코드 리뷰 / 보안 리뷰 결과):
-//  - production 빌드에서 JWT_SECRET / ADMIN_PASSWORD_HASH 가 비어 있으면
+//  - production 빌드에서 AUTH_ORIGIN / CLIENT_ID / APP_SECRET / APP_ORIGIN 이 비어 있으면
 //    부팅 시점에 명시적으로 실패해야 한다 (fail-fast).
 //  - development / test 환경에서는 두 값 모두 optional 유지 (현재 동작 보존).
 //
@@ -49,47 +49,44 @@ describe("parseEnv - production 환경 강제 검증", () => {
     return (mod as unknown as { parseEnv: () => unknown }).parseEnv;
   }
 
-  it("production + JWT_SECRET 미설정 → throw", async () => {
+  it("production + AUTH_ORIGIN 미설정 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "postgres://test");
-    vi.stubEnv("JWT_SECRET", "");
-    vi.stubEnv(
-      "ADMIN_PASSWORD_HASH",
-      "$2a$10$abcdefghijklmnopqrstuv.wxyz0123456789ABCDEFGHIJKL"
-    );
+    vi.stubEnv("AUTH_ORIGIN", "");
+    vi.stubEnv("CLIENT_ID", "gbl");
+    vi.stubEnv("APP_SECRET", "server-secret");
+    vi.stubEnv("APP_ORIGIN", "https://gbl.bini59.dev");
 
     const parseEnv = await importParseEnv();
     expect(typeof parseEnv).toBe("function");
-    expect(() => parseEnv()).toThrow(/JWT_SECRET/);
+    expect(() => parseEnv()).toThrow(/AUTH_ORIGIN/);
   });
 
-  it("production + ADMIN_PASSWORD_HASH 미설정 → throw", async () => {
+  it("production + APP_SECRET 미설정 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "postgres://test");
-    vi.stubEnv(
-      "JWT_SECRET",
-      "0123456789abcdef0123456789abcdef0123456789abcdef"
-    );
-    vi.stubEnv("ADMIN_PASSWORD_HASH", "");
+    vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
+    vi.stubEnv("CLIENT_ID", "gbl");
+    vi.stubEnv("APP_SECRET", "");
+    vi.stubEnv("APP_ORIGIN", "https://gbl.bini59.dev");
 
     const parseEnv = await importParseEnv();
-    expect(() => parseEnv()).toThrow(/ADMIN_PASSWORD_HASH/);
+    expect(() => parseEnv()).toThrow(/APP_SECRET/);
   });
 
-  it("production + JWT_SECRET 이 32자 미만 → throw", async () => {
+  it("production + APP_ORIGIN 이 HTTPS가 아니면 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "postgres://test");
-    vi.stubEnv("JWT_SECRET", "short-secret");
-    vi.stubEnv(
-      "ADMIN_PASSWORD_HASH",
-      "$2a$10$abcdefghijklmnopqrstuv.wxyz0123456789ABCDEFGHIJKL"
-    );
+    vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
+    vi.stubEnv("CLIENT_ID", "gbl");
+    vi.stubEnv("APP_SECRET", "server-secret");
+    vi.stubEnv("APP_ORIGIN", "http://gbl.bini59.dev");
 
     const parseEnv = await importParseEnv();
-    expect(() => parseEnv()).toThrow(/JWT_SECRET/);
+    expect(() => parseEnv()).toThrow(/APP_ORIGIN/);
   });
 
-  it("development 환경에서는 JWT_SECRET / ADMIN_PASSWORD_HASH 둘 다 optional (throw 없음)", async () => {
+  it("development 환경에서는 SSO 설정이 optional (throw 없음)", async () => {
     vi.stubEnv("NODE_ENV", "development");
     vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("JWT_SECRET", "");
@@ -99,7 +96,7 @@ describe("parseEnv - production 환경 강제 검증", () => {
     expect(() => parseEnv()).not.toThrow();
   });
 
-  it("test 환경에서도 JWT_SECRET / ADMIN_PASSWORD_HASH 둘 다 optional (throw 없음)", async () => {
+  it("test 환경에서도 SSO 설정이 optional (throw 없음)", async () => {
     vi.stubEnv("NODE_ENV", "test");
     vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("JWT_SECRET", "");
@@ -109,17 +106,13 @@ describe("parseEnv - production 환경 강제 검증", () => {
     expect(() => parseEnv()).not.toThrow();
   });
 
-  it("production + 두 값 모두 적법 → throw 없음", async () => {
+  it("production + SSO 설정이 모두 적법 → throw 없음", async () => {
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("DATABASE_URL", "postgres://test");
-    vi.stubEnv(
-      "JWT_SECRET",
-      "0123456789abcdef0123456789abcdef0123456789abcdef"
-    );
-    vi.stubEnv(
-      "ADMIN_PASSWORD_HASH",
-      "$2a$10$abcdefghijklmnopqrstuv.wxyz0123456789ABCDEFGHIJKL"
-    );
+    vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
+    vi.stubEnv("CLIENT_ID", "gbl");
+    vi.stubEnv("APP_SECRET", "server-secret");
+    vi.stubEnv("APP_ORIGIN", "https://gbl.bini59.dev");
 
     const parseEnv = await importParseEnv();
     expect(() => parseEnv()).not.toThrow();

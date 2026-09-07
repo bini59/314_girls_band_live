@@ -4,7 +4,7 @@ import { z } from "zod";
  * 환경변수 스키마.
  *
  * 보안 강화 (production fail-fast):
- *  - production 환경에서는 JWT_SECRET (>=32자) + ADMIN_PASSWORD_HASH (>=1자) 가 필수.
+ *  - production 환경에서는 321_auth SSO 설정이 필수.
  *  - development / test 에서는 둘 다 optional (로컬 개발 편의).
  *
  * 누락/부적합 시 throw 되는 메시지에는 누락된 키 이름이 포함되어
@@ -15,6 +15,11 @@ const envSchema = z
     DATABASE_URL: z.string().min(1),
     ADMIN_PASSWORD_HASH: z.string().optional(),
     JWT_SECRET: z.string().optional(),
+    AUTH_ORIGIN: z.string().optional(),
+    CLIENT_ID: z.string().optional(),
+    APP_SECRET: z.string().optional(),
+    APP_ORIGIN: z.string().optional(),
+    AUTH_REQUIRED_ROLE: z.string().optional(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -24,21 +29,35 @@ const envSchema = z
       return;
     }
 
-    if (!data.JWT_SECRET || data.JWT_SECRET.length < 32) {
+    if (!data.AUTH_ORIGIN || !data.AUTH_ORIGIN.startsWith("https://")) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["JWT_SECRET"],
-        message:
-          "JWT_SECRET 은 production 환경에서 필수이며 32자 이상이어야 합니다.",
+        path: ["AUTH_ORIGIN"],
+        message: "AUTH_ORIGIN 은 production 환경에서 HTTPS URL로 필수입니다.",
       });
     }
 
-    if (!data.ADMIN_PASSWORD_HASH || data.ADMIN_PASSWORD_HASH.length < 1) {
+    if (!data.CLIENT_ID) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        path: ["ADMIN_PASSWORD_HASH"],
-        message:
-          "ADMIN_PASSWORD_HASH 는 production 환경에서 필수입니다.",
+        path: ["CLIENT_ID"],
+        message: "CLIENT_ID 는 production 환경에서 필수입니다.",
+      });
+    }
+
+    if (!data.APP_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["APP_SECRET"],
+        message: "APP_SECRET 은 production 환경에서 필수입니다.",
+      });
+    }
+
+    if (!data.APP_ORIGIN || !data.APP_ORIGIN.startsWith("https://")) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["APP_ORIGIN"],
+        message: "APP_ORIGIN 은 production 환경에서 HTTPS URL로 필수입니다.",
       });
     }
   });

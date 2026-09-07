@@ -39,9 +39,23 @@ pnpm prisma:migrate   # 마이그레이션 실행 (최초 1회는 이름 입력)
 | `pnpm prisma:generate` | Prisma Client 재생성 |
 | `pnpm prisma:studio` | Prisma Studio (브라우저 DB 관리 UI) |
 
-## 어드민 dev 인증
+## 어드민 인증
 
-`/admin/login` 으로 어드민 로그인이 가능하려면 dev 서버에 `ADMIN_PASSWORD_HASH` + `JWT_SECRET` 환경변수가 필요합니다.
+운영 backoffice 인증은 `321_auth` SSO를 사용합니다. `gbl` 서비스에 활성 `admin` membership이 있는 계정만 접근할 수 있습니다.
+
+필수 환경변수:
+
+```env
+AUTH_ORIGIN=https://auth.bini59.dev
+CLIENT_ID=gbl
+APP_ORIGIN=https://band-live.bini59.dev
+AUTH_REQUIRED_ROLE=admin
+APP_SECRET=server-only-secret
+```
+
+`APP_SECRET`은 서버 환경변수로만 주입하고 브라우저 번들에 포함하지 않습니다. `/admin` 접근 시 `321_auth /verify`를 서버에서 호출하며, 인증 서비스 장애는 fail-closed 됩니다.
+
+로컬 테스트나 SSO 설정이 없는 개발 환경에서는 기존 password/JWT 테스트 경로를 유지합니다.
 
 **주의**: `.env` 또는 `.env.local` 에 bcrypt 해시(`$2a$...`)를 넣으면 Next.js 의 dotenv-expand 가 `$2a`, `$04$xxx` 같은 패턴을 변수 reference 로 해석해 값이 깨집니다. single-quote 도 안 통합니다. 다음 방법 중 하나를 사용하세요:
 
