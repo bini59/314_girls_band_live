@@ -1,22 +1,31 @@
-## Development flow
+# AGENTS — girls_band_live
 
-모든 작업은 `dev-flow`로 시작한다. 이 스킬이 트랙(light/heavy)을 판별하고 아래 단계로 위임한다:
+애니/게임 기반 걸즈밴드 라이브 일정 아카이브. Next.js 15 / React 19 / Prisma / PostgreSQL 16 / pnpm 9 / Node 20+.
+도메인 용어는 [CONTEXT.md](CONTEXT.md), 스키마는 `prisma/schema.prisma`.
 
-- **계획** → `planner` (트랙 판별 + `tmp/TODO.md` 생성). 메인에서 직접 계획하지 않는다.
-- **구현** → `dev-workflow` (light/heavy 실행, worktree, 통합). `.codex/agents/`의 도메인 전용 에이전트가 있으면 글로벌 범용 에이전트보다 우선 사용한다.
-- **리뷰** → `review-gate` (code-reviewer 정확성/보안 → ponytail-review 오버엔지니어링). 머지 전 필수. CRITICAL/HIGH는 반드시 수정.
-- **릴리즈** → `release` 스킬 (production=main / hotfix 절차, staging 없음).
+## 불변 컨벤션
 
-작업 인테이크는 `gh-issue` 스킬로 GitHub 이슈에서 가져온다.
+- **UTC 저장 / JST 표시** — DB는 UTC, 어드민 입력은 JST datetime-local, UI 표시는 항상 `Asia/Tokyo`. 한국 시각 표시 금지.
+- 어드민 인증은 `321_auth` SSO(`/admin`, 서버에서 `/verify` 호출, fail-closed). SSO 미설정 로컬은 password/JWT 경로 유지.
+- `.env`에 bcrypt 해시(`$2a$…`)를 직접 넣지 말 것 — dotenv-expand가 깨뜨림 (README 참조).
 
-도메인 용어(ubiquitous language)는 `CONTEXT.md` 참조. 테스트는 수동 실행 금지 — pre-commit hook이 커밋 시 타입 체크 + 전체 테스트를 자동 실행한다.
+## 명령
+
+- 검증: `pnpm typecheck`, `pnpm lint`, `pnpm test:run` (husky pre-commit이 같은 순서로 실행. 우회는 `--no-verify`).
+- 통합 테스트 DB: `pnpm db:up && pnpm db:reset:test` (`TEST_DATABASE_URL`).
+- E2E: `pnpm test:e2e`.
+- 스키마 변경 후: `pnpm prisma:migrate` → `pnpm prisma:generate`.
+
+## 브랜치 / 릴리즈
+
+`feature/* → dev → (PR) → main`. **main push = 즉시 자동 배포**(GHCR + blue/green). `ci.yml`은 push→dev, PR→main에서 lint/typecheck/vitest.
+릴리즈·핫픽스·롤백 절차는 `release` 스킬(`.agents/skills/release/SKILL.md`). 티켓→머지 전체를 한 번에 진행할 때는 `dev-flow` 스킬을 쓸 수 있다(일반 수정에 필수는 아님).
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+`graphify-out/graph.json`이 있으면 코드베이스 전반·의존 관계 질문은 `graphify query "<질문>"` / `graphify path "<A>" "<B>"` / `graphify explain "<개념>"`로 먼저 범위를 잡는다. 알고 있는 파일의 소규모 수정은 바로 읽고 고쳐도 된다. 코드 수정 후 `graphify update .`.
+`graphify-out/GRAPH_REPORT.md`는 넓은 아키텍처 리뷰 때만.
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+## git push 인증
+
+`git push` 403(`kevin-lim59`)이면 `unset GITHUB_TOKEN && git push origin dev`.
