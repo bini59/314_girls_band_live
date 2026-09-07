@@ -5,7 +5,7 @@ description: Release girls_band_live — production(feature→main PR 자동 배
 
 # Release: girls_band_live
 
-브랜치 흐름: `feature/* → (PR) → main → push trigger → GHCR 빌드 + self-hosted 러너 blue/green 배포`.
+브랜치 흐름: `feature/* → (PR) → main → push trigger → GHCR 빌드 + self-hosted 러너에서 컨테이너 교체 배포`.
 별도 스테이징·통합 브랜치 없음. `main`에 직접 push 금지 — 항상 PR.
 버전 = 프로덕션 릴리즈 단위(semver). 일상 커밋은 `package.json` version을 건드리지 않는다.
 
@@ -24,14 +24,14 @@ description: Release girls_band_live — production(feature→main PR 자동 배
    ```
 3. **머지** — CI GREEN 후 머지. `push → main`이 `.github/workflows/deploy.yml`을 트리거:
    - **build-and-push** (ubuntu-24.04-arm): 이미지 빌드 → GHCR 푸시.
-   - **deploy** (self-hosted `gbl-prod` 러너): `scripts/deploy-blue-green.sh` 실행 → 반대 색 기동 → healthy 대기 → nginx upstream 전환 → 무중단 배포.
+   - **deploy** (self-hosted `gbl-prod` 러너): 이미지 pull → `prisma migrate deploy` → `docker compose --profile app up -d gbl`(단일 컨테이너 재시작, ~1초 다운타임). blue/green 아님 — 이유는 `docker-compose.yml` 주석.
 4. **태그 + GitHub Release** — 배포 후 태그를 찍는다 (태그 형식 `vX.Y.Z`).
    ```bash
    git checkout main && git pull
    git tag v0.6.0 && git push origin v0.6.0
    gh release create v0.6.0 --generate-notes
    ```
-5. **검증** — `app/api/health/route.ts` 엔드포인트가 200인지, nginx가 새 색을 바라보는지(`nginx/conf.d/active-upstream.conf`) 확인.
+5. **검증** — `/api/health`가 200인지, `docker compose ps gbl`이 healthy인지 확인.
 
 ## Hotfix (프로덕션 긴급 패치)
 
@@ -49,7 +49,7 @@ gh pr create --base main --title "Hotfix v0.6.1"
 
 ## 롤백
 
-- 빠른 롤백: `nginx/conf.d/active-upstream.conf`를 직전 색으로 되돌리고 `docker compose exec nginx nginx -s reload`.
+- 빠른 롤백(서버에서): `APP_IMAGE=ghcr.io/<repo>:sha-<직전 커밋> docker compose --profile app up -d gbl`. 마이그레이션이 비가역이면 정식 롤백으로.
 - 정식 롤백: `git revert` PR → `main` 머지 → 재배포.
 
 ## Notes
