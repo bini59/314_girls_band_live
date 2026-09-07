@@ -34,7 +34,7 @@ export default async function AdminLivesPage() {
         </div>
         <Link
           href="/admin/lives/new"
-          className="inline-flex h-9 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-4 text-sm font-bold tracking-[var(--tracking-button)] text-[color:var(--color-primary-foreground)] transition hover:brightness-110 hover:scale-[1.02]"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-transparent bg-accent px-3 text-[13px] font-medium text-accent-fg no-underline hover:opacity-[.88] hover:no-underline"
         >
           + 새 라이브
         </Link>

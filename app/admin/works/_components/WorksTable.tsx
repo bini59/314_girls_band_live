@@ -62,7 +62,7 @@ export function WorksTable({ works }: WorksTableProps) {
       <div className="flex items-center justify-end">
         <Link
           href="/admin/works/new"
-          className="inline-flex h-9 items-center justify-center rounded-full bg-[color:var(--color-primary)] px-4 text-sm font-bold tracking-[var(--tracking-button)] text-[color:var(--color-primary-foreground)] transition hover:brightness-110 hover:scale-[1.02]"
+          className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md border border-transparent bg-accent px-3 text-[13px] font-medium text-accent-fg no-underline hover:opacity-[.88] hover:no-underline"
         >
           + 작품 추가
         </Link>
@@ -113,7 +113,7 @@ export function WorksTable({ works }: WorksTableProps) {
                     <Link
                       href={`/admin/works/${w.id}/edit`}
                       aria-label={`${w.nameKo} 편집`}
-                      className="inline-flex h-8 items-center justify-center rounded-full border border-[color:var(--color-border)] bg-transparent px-4 text-xs font-bold tracking-[var(--tracking-button)] text-[color:var(--color-foreground)] transition hover:border-[color:var(--color-foreground)] hover:bg-[color:var(--color-muted)]"
+                      className="inline-flex h-[26px] items-center justify-center gap-1.5 rounded-sm border border-line-strong bg-raise px-[9px] text-xs text-fg no-underline hover:bg-panel-2 hover:no-underline"
                     >
                       편집
                     </Link>

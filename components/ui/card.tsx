@@ -1,10 +1,6 @@
 /**
- * Card — Spotify 영감 카드 컨테이너.
- *
- * 디자인 규칙: 카드 내부 여백과 경계 스타일을 일관되게 유지한다.
- *   - 8px radius, 가시 보더 없음
- *   - 배경은 surface (--color-background)
- *   - 호버 시 옅은 elevation
+ * Card — 컨테이너. @bini59/design Card 와 같은 표면(border-line + bg-panel + rounded-lg).
+ * design Card 는 내부 p-4 를 강제하므로 여기서는 표면만 맞추고 CardContent 로 여백을 제어한다.
  */
 import * as React from "react";
 
@@ -18,7 +14,7 @@ export const Card = React.forwardRef<
     <div
       ref={ref}
       className={cn(
-        "rounded-[var(--radius-lg)] bg-[color:var(--color-background)] text-[color:var(--color-foreground)] transition-shadow hover:shadow-[var(--shadow-elevated)]",
+        "rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)] text-[color:var(--color-foreground)]",
         className
       )}
       {...props}

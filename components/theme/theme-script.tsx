@@ -17,6 +17,7 @@ const SCRIPT = `(() => {
     var root = document.documentElement;
     if (resolved === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
+    root.dataset.theme = resolved;
     root.style.colorScheme = resolved;
   } catch (e) {}
 })();`;
