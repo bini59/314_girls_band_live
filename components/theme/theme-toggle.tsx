@@ -80,6 +80,7 @@ function applyTheme(theme: Theme): void {
   const root = document.documentElement;
   if (resolved === "dark") root.classList.add("dark");
   else root.classList.remove("dark");
+  root.dataset.theme = resolved;
   root.style.colorScheme = resolved;
 }
 

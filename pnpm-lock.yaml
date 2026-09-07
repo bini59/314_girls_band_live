@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@bini59/design':
+        specifier: github:bini59/324_bini59_design#v0.1.0
+        version: https://codeload.github.com/bini59/324_bini59_design/tar.gz/e8e72264b9964a52fbe0114014a9a2e0b8e30ccf(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@next/third-parties':
         specifier: ^15.1.0
         version: 15.5.20(next@15.5.18(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
@@ -49,7 +52,7 @@ importers:
         specifier: ^1.49.1
         version: 1.60.0
       '@tailwindcss/postcss':
-        specifier: ^4.0.0-beta.7
+        specifier: ^4.3.0
         version: 4.3.0
       '@testing-library/dom':
         specifier: ^10.4.1
@@ -91,7 +94,7 @@ importers:
         specifier: ^5.22.0
         version: 5.22.0
       tailwindcss:
-        specifier: ^4.0.0-beta.7
+        specifier: ^4.3.0
         version: 4.3.0
       tsx:
         specifier: ^4.21.0
@@ -217,6 +220,13 @@ packages:
 
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
+
+  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/e8e72264b9964a52fbe0114014a9a2e0b8e30ccf':
+    resolution: {tarball: https://codeload.github.com/bini59/324_bini59_design/tar.gz/e8e72264b9964a52fbe0114014a9a2e0b8e30ccf}
+    version: 0.1.0
+    peerDependencies:
+      react: ^18 || ^19
+      react-dom: ^18 || ^19
 
   '@bramus/specificity@2.4.2':
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
@@ -3477,6 +3487,11 @@ snapshots:
       '@babel/helper-validator-identifier': 7.28.5
 
   '@bcoe/v8-coverage@0.2.3': {}
+
+  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/e8e72264b9964a52fbe0114014a9a2e0b8e30ccf(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+    dependencies:
+      react: 19.2.6
+      react-dom: 19.2.6(react@19.2.6)
 
   '@bramus/specificity@2.4.2':
     dependencies:
