@@ -1,7 +1,7 @@
 /**
  * Button — Spotify 영감 pill 버튼 (Tailwind v4 + CSS 토큰).
  *
- * 디자인 규칙 (.claude/DESIGN.md §4 / §7):
+ * 디자인 규칙: 일관된 variant/size 조합과 접근성 상태를 유지한다.
  *   - 모든 버튼은 pill geometry (rounded-full)
  *   - 라벨은 트래킹(letter-spacing)을 주어 systemic label 음성 부여
  *   - primary 는 Spotify Green — CTA·확정·저장 전용

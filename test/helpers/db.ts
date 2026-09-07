@@ -34,6 +34,7 @@ const TABLES = [
   "work",
   "series",
   "vendor",
+  "api_key",
 ];
 
 export async function resetDb(): Promise<void> {

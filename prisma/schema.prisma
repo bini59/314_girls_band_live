@@ -357,3 +357,22 @@ model TicketSaleTier {
   @@index([tierId])
   @@map("ticket_sale_tier")
 }
+
+// =====================================================================
+// ApiKey (공개 API 인증)
+//   — 평문 키는 저장하지 않고 sha256 hex 해시(keyHash)만 보관.
+//   — keyPrefix 는 평문 앞 8자로 목록 식별용(비밀 아님).
+//   — revokedAt 이 null 이면 active.
+// =====================================================================
+
+model ApiKey {
+  id         Int       @id @default(autoincrement())
+  name       String    // 사람이 붙이는 키 이름 예) "iCal importer"
+  keyHash    String    @unique @map("key_hash") // sha256 hex, 평문 저장 금지
+  keyPrefix  String    @map("key_prefix")       // 평문 키 앞 8자 (식별용)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  revokedAt  DateTime? @map("revoked_at")        // null이면 active
+  lastUsedAt DateTime? @map("last_used_at")
+
+  @@map("api_key")
+}

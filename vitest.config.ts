@@ -14,7 +14,7 @@ export default defineConfig({
     globals: false,
     setupFiles: ["./test/setup.ts"],
     include: ["**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],
-    exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**", "**/.claude/**"],
+    exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**"],
     // 인프라 보강: DB 격리를 위해 단일 fork 로 실행한다.
     // integration 테스트가 같은 Postgres 인스턴스를 공유하므로 병렬 실행 시
     // TRUNCATE 가 서로의 fixture 를 덮어쓴다.

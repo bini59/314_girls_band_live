@@ -57,15 +57,9 @@ tmp/
 *.local
 .local/
 
-# Claude Code tooling, graph, domain seed — all local, not committed
-.claude/
-CLAUDE.md
-CONTEXT.md
+# Project-local Codex flow files are committed.
 graphify-out/
 
 # graphify-installed git hooks (call the local graphify binary; not portable to teammates)
 .husky/post-commit
 .husky/post-checkout
-
-# Claude Code runtime
-.claude/scheduled_tasks.lock
