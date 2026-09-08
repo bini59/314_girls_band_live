@@ -36,7 +36,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@bini59/design": "github:bini59/324_bini59_design#2e0c099ec5538710ae88a561b55342769551590d",
+    "@bini59/design": "github:bini59/324_bini59_design#b71a79b",
     "@next/third-parties": "^15.1.0",
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",

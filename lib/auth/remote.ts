@@ -3,7 +3,14 @@ const DEFAULT_REQUIRED_ROLE = "admin";
 const VERIFY_TIMEOUT_MS = 5_000;
 
 export type RemoteAuthResult =
-  | { kind: "authenticated"; userId: string; role: string }
+  | {
+      kind: "authenticated";
+      userId: string;
+      role: string;
+      email: string | null;
+      name: string | null;
+      avatarUrl: string | null;
+    }
   | { kind: "unauthenticated" }
   | { kind: "forbidden" }
   | { kind: "unavailable" };
@@ -72,6 +79,9 @@ export async function verifyRemoteSession(
 
     const body = (await response.json()) as {
       userId?: unknown;
+      email?: unknown;
+      name?: unknown;
+      avatarUrl?: unknown;
       membership?: { role?: unknown; status?: unknown } | null;
     };
     const userId = typeof body.userId === "string" ? body.userId : "";
@@ -82,7 +92,15 @@ export async function verifyRemoteSession(
       return { kind: "forbidden" };
     }
 
-    return { kind: "authenticated", userId, role };
+    const str = (v: unknown) => (typeof v === "string" && v ? v : null);
+    return {
+      kind: "authenticated",
+      userId,
+      role,
+      email: str(body.email),
+      name: str(body.name),
+      avatarUrl: str(body.avatarUrl),
+    };
   } catch {
     return { kind: "unavailable" };
   } finally {

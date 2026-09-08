@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { AppShell, type NavItem } from "@bini59/design";
+import { AppShell, type AuthenticatedUser, type NavItem } from "@bini59/design";
 
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
@@ -21,10 +21,18 @@ const NAV: NavItem[] = [
 /**
  * AdminShell — @bini59/design AppShell 래핑 (Sidebar + Topbar + 본문).
  *
- * 인증 가드는 호출 레이아웃(`app/admin/lives/layout.tsx`)이 담당.
+ * 인증 가드는 호출 레이아웃(`app/admin/lives/layout.tsx`)이 담당하며,
+ * 거기서 받은 user 를 그대로 넘겨 Topbar 프로필 팝업을 띄운다 (SSO 일 때만 non-null).
+ * nav aria-current 는 AppShell 이 activeId 기준으로 주입한다.
  * 로그아웃은 기존 Server Action(`signOutAction`)을 그대로 호출.
  */
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  user = null,
+  children,
+}: {
+  user?: AuthenticatedUser | null;
+  children: React.ReactNode;
+}) {
   const pathname = usePathname() ?? "";
   const active = NAV.find((n) => pathname.startsWith(n.href!));
   return (
@@ -33,12 +41,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         brand={{ mark: "원", name: "원정가고싶다", host: "관리자" }}
         nav={NAV}
         activeId={active?.id ?? ""}
-        renderLink={(item, inner) => (
-          <Link href={item.href ?? "#"} aria-current={item.id === active?.id ? "page" : undefined}>
-            {inner}
-          </Link>
-        )}
-        user={null}
+        renderLink={(item, inner) => <Link href={item.href ?? "#"}>{inner}</Link>}
+        user={user}
         onLogout={() => void signOutAction()}
         crumb={
           <>
@@ -47,7 +51,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <strong>{active?.label ?? ""}</strong>
           </>
         }
-        sidebarFoot={<ThemeToggle className="justify-self-start" />}
+        sidebarFoot={
+          // 사이드바 폭을 꽉 채워 3개 옵션 타겟을 키운다 (기본은 size-6 아이콘 버튼).
+          <ThemeToggle className="w-full [&>button]:h-8 [&>button]:flex-1" />
+        }
       >
         {children}
       </AppShell>
