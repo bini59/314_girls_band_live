@@ -15,6 +15,6 @@ export default async function AdminToursLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdminSession();
-  return <AdminShell>{children}</AdminShell>;
+  const { user } = await requireAdminSession();
+  return <AdminShell user={user}>{children}</AdminShell>;
 }

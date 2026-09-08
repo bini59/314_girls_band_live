@@ -54,6 +54,9 @@ describe("verifyRemoteSession", () => {
       kind: "authenticated",
       userId: "user-1",
       role: "admin",
+      email: "admin@example.com",
+      name: "Admin",
+      avatarUrl: null,
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);

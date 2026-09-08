@@ -115,7 +115,7 @@ describe("requireAdminSession - 성공 케이스", () => {
     const { requireAdminSession } = await importGuard();
     const result = await requireAdminSession();
 
-    expect(result).toEqual({ sub: "admin", role: "ADMIN" });
+    expect(result).toEqual({ sub: "admin", role: "ADMIN", user: null });
     expect(redirectMock).not.toHaveBeenCalled();
   });
 });
@@ -142,7 +142,7 @@ describe("requireAdminSession - 쿠키 이름 분기", () => {
     const { requireAdminSession } = await importGuard();
     const result = await requireAdminSession();
 
-    expect(result).toEqual({ sub: "admin", role: "ADMIN" });
+    expect(result).toEqual({ sub: "admin", role: "ADMIN", user: null });
     expect(cookieGetMock).toHaveBeenCalledWith(PROD_COOKIE_NAME);
     expect(redirectMock).not.toHaveBeenCalled();
   });

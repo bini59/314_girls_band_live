@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { AuthenticatedUser } from "@bini59/design";
 
 import { ADMIN_LOGIN_PATH } from "./routes";
 import {
@@ -16,6 +17,9 @@ import {
 const ACCESS_DENIED_PATH = "/admin/access-denied";
 const AUTH_UNAVAILABLE_PATH = "/admin/auth-unavailable";
 
+/** 세션 + (SSO일 때) 프로필. 프로필은 AppShell 프로필 팝업 표시에만 쓴다. */
+export type AdminSession = SessionPayload & { user: AuthenticatedUser | null };
+
 /**
  * 어드민 세션을 강제로 검증한다.
  *
@@ -26,7 +30,7 @@ const AUTH_UNAVAILABLE_PATH = "/admin/auth-unavailable";
  *
  * 모든 어드민 Server Action / Server Component 의 첫 줄에서 호출한다.
  */
-export async function requireAdminSession(): Promise<SessionPayload> {
+export async function requireAdminSession(): Promise<AdminSession> {
   if (hasPartialRemoteAuthConfiguration()) {
     redirect(AUTH_UNAVAILABLE_PATH);
   }
@@ -38,7 +42,17 @@ export async function requireAdminSession(): Promise<SessionPayload> {
     if (result.kind === "unauthenticated") redirect("/admin/login");
     if (result.kind === "forbidden") redirect(ACCESS_DENIED_PATH);
     if (result.kind === "unavailable") redirect(AUTH_UNAVAILABLE_PATH);
-    return { sub: result.userId, role: "ADMIN" };
+    return {
+      sub: result.userId,
+      role: "ADMIN",
+      user: {
+        userId: result.userId,
+        email: result.email,
+        name: result.name,
+        avatarUrl: result.avatarUrl,
+        membership: { role: result.role, status: "active", joinedAt: "" },
+      },
+    };
   }
 
   const session = await readSession();
@@ -51,7 +65,7 @@ export async function requireAdminSession(): Promise<SessionPayload> {
   if (session.role !== "ADMIN") {
     redirect(ADMIN_LOGIN_PATH);
   }
-  return session;
+  return { ...session, user: null };
 }
 
 /**
