@@ -4,8 +4,32 @@
  */
 import { prisma } from "@/lib/db";
 
+// ponytail: 밴드 표시 순서 고정 상수. 목록에 없는 slug 는 뒤에 nameKo 순. 어드민에서 바꾸고 싶어지면 Band.sortOrder 컬럼으로.
+const BAND_ORDER = [
+  "poppin-party",
+  "afterglow",
+  "pastel-palettes",
+  "roselia",
+  "hello-happy-world",
+  "morfonica",
+  "raise-a-suilen",
+  "mygo",
+  "ave-mujica",
+  "mugendai-mewtype",
+  "millsage",
+  "ikka-dumb-rock",
+];
+
+export function sortBands<T extends { slug: string; nameKo: string }>(bands: T[]): T[] {
+  const rank = (b: T) => {
+    const i = BAND_ORDER.indexOf(b.slug);
+    return i === -1 ? BAND_ORDER.length : i;
+  };
+  return [...bands].sort((a, b) => rank(a) - rank(b) || a.nameKo.localeCompare(b.nameKo, "ko"));
+}
+
 export async function getWorksForNav() {
-  return prisma.work.findMany({
+  const works = await prisma.work.findMany({
     orderBy: { nameKo: "asc" },
     select: {
       id: true,
@@ -13,7 +37,6 @@ export async function getWorksForNav() {
       nameKo: true,
       nameJp: true,
       bands: {
-        orderBy: { nameKo: "asc" },
         select: {
           id: true,
           slug: true,
@@ -23,6 +46,7 @@ export async function getWorksForNav() {
       },
     },
   });
+  return works.map((w) => ({ ...w, bands: sortBands(w.bands) }));
 }
 
 export type NavWork = Awaited<ReturnType<typeof getWorksForNav>>[number];
@@ -124,7 +148,7 @@ export async function getTourBySlug(slug: string) {
 }
 
 export async function getWorkBySlug(slug: string) {
-  return prisma.work.findUnique({
+  const work = await prisma.work.findUnique({
     where: { slug },
     select: {
       id: true,
@@ -136,7 +160,6 @@ export async function getWorkBySlug(slug: string) {
       logoUrl: true,
       series: { select: { slug: true, nameKo: true } },
       bands: {
-        orderBy: { nameKo: "asc" },
         select: {
           id: true,
           slug: true,
@@ -161,6 +184,7 @@ export async function getWorkBySlug(slug: string) {
       },
     },
   });
+  return work && { ...work, bands: sortBands(work.bands) };
 }
 
 export async function getBandBySlug(slug: string) {
