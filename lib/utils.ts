@@ -14,3 +14,9 @@ export function cn(...inputs: ClassValue[]): string {
 export function isPositiveInt(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
+
+/** 장소명(+주소)으로 구글맵 검색 URL 생성. */
+export function googleMapsSearchUrl(...parts: (string | null | undefined)[]): string {
+  const query = parts.filter(Boolean).join(" ");
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+}

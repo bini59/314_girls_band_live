@@ -10,7 +10,7 @@ import {
   WEEKDAY_LABELS,
 } from "@/lib/jst";
 import type { PublicLive } from "@/lib/public/queries";
-import { cn } from "@/lib/utils";
+import { cn, googleMapsSearchUrl } from "@/lib/utils";
 
 const TYPE_LABEL: Record<string, string> = {
   SOLO: "단독",
@@ -396,7 +396,17 @@ function SidePanel({
           {live.doorsOpenAt && (
             <Field label="개장">{formatJstHuman(new Date(live.doorsOpenAt))}</Field>
           )}
-          <Field label="장소">{live.venueName}</Field>
+          <Field label="장소">
+            <a
+              href={googleMapsSearchUrl(live.venueName)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+              title="구글맵에서 보기"
+            >
+              {live.venueName}
+            </a>
+          </Field>
           {bands.length > 0 && (
             <Field label="출연">
               <ul className="flex flex-wrap gap-1.5">
