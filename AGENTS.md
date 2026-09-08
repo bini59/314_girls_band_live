@@ -28,4 +28,7 @@
 
 ## git push 인증
 
-`git push` 403(`kevin-lim59`)이면 `unset GITHUB_TOKEN && git push`.
+`.envrc`가 `~/Desktop/07_Project/.envrc`의 `GITHUB_TOKEN`(레포 소유자 `bini59`)을 로드한다.
+direnv가 없는 셸에서는 `eval "$(direnv export bash)"`로 주입한다.
+토큰 값을 `.envrc`에 복사하지 말 것 — 이 파일은 git 추적 대상이다.
+gh CLI는 키체인에 `kevin-lim59`가 활성 계정으로 남아 있어도 `GITHUB_TOKEN`이 우선한다.
