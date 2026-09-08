@@ -92,6 +92,47 @@ export async function listBands(
   });
 }
 
+/**
+ * 어드민 목록 페이지용 — 작품 필터 + 검색 + 페이지네이션.
+ *
+ * 콤보박스용 searchBands 와 용도가 다르다 — 이쪽은 총 건수와 work include 가 필요하다.
+ *
+ * 검색 대상: slug / nameKo / nameJp / nameEn (부분일치, 대소문자 무시).
+ */
+export async function searchBandsForAdmin(options: {
+  workId?: number;
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: BandWithWork[]; total: number }> {
+  const where = {
+    ...(options.workId !== undefined ? { workId: options.workId } : {}),
+    ...(options.q
+      ? {
+          OR: [
+            { slug: { contains: options.q, mode: "insensitive" as const } },
+            { nameKo: { contains: options.q, mode: "insensitive" as const } },
+            { nameJp: { contains: options.q, mode: "insensitive" as const } },
+            { nameEn: { contains: options.q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.band.findMany({
+      where,
+      orderBy: { nameKo: "asc" },
+      include: { work: true },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.band.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 export type CreateBandInput = {
   workId: number;
   slug: string;

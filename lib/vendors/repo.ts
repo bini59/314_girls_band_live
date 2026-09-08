@@ -17,6 +17,38 @@ export async function listVendors(): Promise<Vendor[]> {
   });
 }
 
+/**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: slug / name (부분일치, 대소문자 무시).
+ */
+export async function searchVendors(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: Vendor[]; total: number }> {
+  const where = options.q
+    ? {
+        OR: [
+          { slug: { contains: options.q, mode: "insensitive" as const } },
+          { name: { contains: options.q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.vendor.findMany({
+      where,
+      orderBy: { name: "asc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.vendor.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 /** 단건 조회. */
 export async function getVendorById(id: number): Promise<Vendor | null> {
   return prisma.vendor.findUnique({ where: { id } });

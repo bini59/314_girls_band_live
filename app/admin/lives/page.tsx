@@ -1,6 +1,13 @@
 import Link from "next/link";
 
-import { listLivesForAdmin } from "@/lib/live/repo";
+import { ListPagination } from "@/components/admin/ListPagination";
+import { ListSearch } from "@/components/admin/ListSearch";
+
+import {
+  parseListParams,
+  toPrismaPage,
+} from "@/lib/admin/list-params";
+import { searchLivesForAdmin } from "@/lib/live/repo";
 
 import { LivesTable } from "./_components/LivesTable";
 
@@ -13,11 +20,19 @@ export const metadata = {
 /**
  * 어드민 라이브 목록.
  *
- * - 본 사이클: 최근 작업한 라이브 50건만 (정렬/필터/검색 X — 다음 사이클).
- * - 빈 상태 안내 + "+ 새 라이브" 진입점.
+ * 검색어/페이지는 querystring(`?q=&page=`)이 단일 진실 원천 — 서버에서
+ * 그대로 조회하므로 북마크·뒤로가기·공유가 동작한다.
  */
-export default async function AdminLivesPage() {
-  const lives = await listLivesForAdmin();
+export default async function AdminLivesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
+  const params = parseListParams(await searchParams);
+  const { rows: lives, total } = await searchLivesForAdmin({
+    q: params.q,
+    ...toPrismaPage(params),
+  });
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -38,20 +53,32 @@ export default async function AdminLivesPage() {
         </Link>
       </div>
 
-      {lives.length === 0 ? (
-        <div className="flex flex-col items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--color-border)] py-12 text-center">
-          <p className="text-base text-[color:var(--color-muted-foreground)]">
-            아직 라이브가 없습니다.
-          </p>
-          <p className="text-xs text-[color:var(--color-muted-foreground)]">
-            상단의 버튼으로 첫 라이브를 등록해보세요.
-          </p>
-        </div>
-      ) : (
-        <LivesTable lives={lives} />
-      )}
+      <div className="flex flex-col gap-3">
+        <ListSearch
+          action="/admin/lives"
+          q={params.q}
+          placeholder="제목 / 공연장 검색"
+        />
 
-      {/* TODO(cycle-C): 정렬/필터/검색/페이지네이션 UI 추가 */}
+        {lives.length === 0 ? (
+          <div className="flex flex-col items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--color-border)] py-12 text-center">
+            <p className="text-base text-[color:var(--color-muted-foreground)]">
+              {params.q
+                ? `"${params.q}" 검색 결과가 없습니다.`
+                : "아직 라이브가 없습니다."}
+            </p>
+            <p className="text-xs text-[color:var(--color-muted-foreground)]">
+              {params.q
+                ? "다른 검색어를 시도해보세요."
+                : "상단의 버튼으로 첫 라이브를 등록해보세요."}
+            </p>
+          </div>
+        ) : (
+          <LivesTable lives={lives} />
+        )}
+
+        <ListPagination basePath="/admin/lives" params={params} total={total} />
+      </div>
     </div>
   );
 }

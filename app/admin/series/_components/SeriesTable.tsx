@@ -33,6 +33,8 @@ import {
 } from "./SeriesDialog";
 
 export interface SeriesTableProps {
+  /** 현재 검색어 — 빈 상태 문구 분기에 사용. */
+  q?: string;
   series: Series[];
 }
 
@@ -44,7 +46,7 @@ type DialogState =
 const DELETE_CONFIRM_MESSAGE =
   "이 시리즈를 삭제하시겠습니까? 연결된 작품은 '시리즈 없음' 상태로 detach 됩니다.";
 
-export function SeriesTable({ series }: SeriesTableProps) {
+export function SeriesTable({ series, q }: SeriesTableProps) {
   const router = useRouter();
   const [dialog, setDialog] = React.useState<DialogState>({ open: false });
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
@@ -144,7 +146,7 @@ export function SeriesTable({ series }: SeriesTableProps) {
 
       {series.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          등록된 시리즈가 없습니다. 우측 상단 버튼으로 추가해주세요.
+          {q ? `"${q}" 검색 결과가 없습니다.` : "등록된 시리즈가 없습니다. 우측 상단 버튼으로 추가해주세요."}
         </p>
       ) : (
         <Table>

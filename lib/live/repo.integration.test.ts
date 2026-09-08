@@ -20,6 +20,7 @@ import { createLive, buildLiveData } from "@/test/factories/live";
 
 import {
   listLivesForAdmin,
+  searchLivesForAdmin,
   getLiveById,
   getLiveBySlug,
   createLive as createLiveRepo,
@@ -215,6 +216,55 @@ describe("listLivesForAdmin", () => {
     }
     const result = await listLivesForAdmin();
     expect(result.length).toBeLessThanOrEqual(50);
+  });
+});
+
+describe("searchLivesForAdmin", () => {
+  it("q 없으면 전체를 페이지 단위로 반환 + 총 건수", async () => {
+    for (let i = 0; i < 5; i++) {
+      await createLive({ slug: `page-${i}` });
+    }
+
+    const first = await searchLivesForAdmin({ skip: 0, take: 2 });
+    expect(first.rows.length).toBe(2);
+    expect(first.total).toBe(5);
+
+    const last = await searchLivesForAdmin({ skip: 4, take: 2 });
+    expect(last.rows.length).toBe(1);
+    expect(last.total).toBe(5);
+  });
+
+  it("범위 밖 skip → 빈 배열이지만 total 은 유지", async () => {
+    await createLive({ slug: "only-one" });
+
+    const result = await searchLivesForAdmin({ skip: 100, take: 20 });
+    expect(result.rows).toEqual([]);
+    expect(result.total).toBe(1);
+  });
+
+  it("titleKo / titleJp / venueName 부분일치 + 대소문자 무시", async () => {
+    await createLive({ slug: "s-ko", titleKo: "결속밴드 단독 공연" });
+    await createLive({ slug: "s-jp", titleJp: "結束バンド ツアー" });
+    await createLive({ slug: "s-venue", venueName: "Zepp Shinjuku" });
+    await createLive({ slug: "s-none", titleKo: "관계없는 공연" });
+
+    expect((await searchLivesForAdmin({ q: "결속", skip: 0, take: 20 })).total).toBe(1);
+    expect((await searchLivesForAdmin({ q: "結束", skip: 0, take: 20 })).total).toBe(1);
+    // 대소문자 무시 — ILIKE
+    expect((await searchLivesForAdmin({ q: "zepp", skip: 0, take: 20 })).total).toBe(1);
+    expect((await searchLivesForAdmin({ q: "ZEPP", skip: 0, take: 20 })).total).toBe(1);
+  });
+
+  it("검색도 soft-deleted 를 제외한다", async () => {
+    const hidden = await createLive({ slug: "s-deleted", titleKo: "삭제된 공연" });
+    await testDb.live.update({
+      where: { id: hidden.id },
+      data: { deletedAt: new Date() },
+    });
+
+    const result = await searchLivesForAdmin({ q: "삭제된", skip: 0, take: 20 });
+    expect(result.rows).toEqual([]);
+    expect(result.total).toBe(0);
   });
 });
 

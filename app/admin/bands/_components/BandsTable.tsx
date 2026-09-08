@@ -4,7 +4,8 @@
  * BandsTable — 밴드 목록 + 추가/편집/삭제 + 작품 필터.
  *
  *  - 추가/편집은 별도 상세 페이지(/admin/bands/new, /admin/bands/[id]/edit)로 이동.
- *  - 작품 필터: workId 셀렉트 → 클라이언트 측 필터링.
+ *  - 작품 필터: workId 셀렉트 → `?workId=` 로 이동해 서버에서 필터링.
+ *    (검색어/페이지와 같은 querystring 에 담아야 북마크·공유가 동작한다.)
  *  - snsLinks 는 카드 형태로 키만 노출 (간략).
  */
 
@@ -32,25 +33,36 @@ import { deleteBandAction } from "../actions";
 export interface BandsTableProps {
   bands: BandWithWork[];
   works: Work[];
+  /** 현재 검색어 — 작품 필터 변경 시 유지한다. */
+  q?: string;
+  /** 현재 작품 필터 (querystring). */
+  selectedWorkId?: number;
 }
 
 const ALL_WORKS = "__all__";
 const DELETE_CONFIRM_MESSAGE =
   "이 밴드를 삭제하시겠습니까? 라이브 출연 이력이 있으면 삭제할 수 없습니다.";
 
-export function BandsTable({ bands, works }: BandsTableProps) {
+export function BandsTable({
+  bands,
+  works,
+  q,
+  selectedWorkId,
+}: BandsTableProps) {
   const router = useRouter();
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
     null
   );
   const [topError, setTopError] = React.useState<string | null>(null);
-  const [filterWorkId, setFilterWorkId] = React.useState<string>(ALL_WORKS);
 
-  const filteredBands = React.useMemo(() => {
-    if (filterWorkId === ALL_WORKS) return bands;
-    const id = Number(filterWorkId);
-    return bands.filter((b) => b.workId === id);
-  }, [bands, filterWorkId]);
+  /** 작품 필터 변경 → 검색어는 유지하고 1페이지로 이동. */
+  function handleWorkChange(value: string) {
+    const sp = new URLSearchParams();
+    if (q) sp.set("q", q);
+    if (value !== ALL_WORKS) sp.set("workId", value);
+    const s = sp.toString();
+    router.push(s ? `/admin/bands?${s}` : "/admin/bands");
+  }
 
   async function handleDelete(b: BandWithWork) {
     if (typeof window !== "undefined") {
@@ -81,8 +93,8 @@ export function BandsTable({ bands, works }: BandsTableProps) {
           </Label>
           <select
             id="band-filter"
-            value={filterWorkId}
-            onChange={(e) => setFilterWorkId(e.target.value)}
+            value={selectedWorkId === undefined ? ALL_WORKS : String(selectedWorkId)}
+            onChange={(e) => handleWorkChange(e.target.value)}
             className="flex h-9 rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-[color:var(--color-ring)]"
           >
             <option value={ALL_WORKS}>전체 작품</option>
@@ -124,11 +136,13 @@ export function BandsTable({ bands, works }: BandsTableProps) {
         </p>
       ) : null}
 
-      {filteredBands.length === 0 ? (
+      {bands.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          {bands.length === 0
-            ? "등록된 밴드가 없습니다. 우측 상단 버튼으로 추가해주세요."
-            : "해당 작품에 등록된 밴드가 없습니다."}
+          {q
+            ? `"${q}" 검색 결과가 없습니다.`
+            : selectedWorkId !== undefined
+              ? "해당 작품에 등록된 밴드가 없습니다."
+              : "등록된 밴드가 없습니다. 우측 상단 버튼으로 추가해주세요."}
         </p>
       ) : (
         <Table>
@@ -142,7 +156,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredBands.map((b) => {
+            {bands.map((b) => {
               const sns = coerceSnsLinks(b.snsLinks);
               const snsKeys = sns ? Object.keys(sns) : [];
               return (

@@ -22,6 +22,41 @@ export async function listWorks(): Promise<WorkWithSeries[]> {
   });
 }
 
+/**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: slug / nameKo / nameJp / nameEn (부분일치, 대소문자 무시).
+ */
+export async function searchWorks(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: WorkWithSeries[]; total: number }> {
+  const where = options.q
+    ? {
+        OR: [
+          { slug: { contains: options.q, mode: "insensitive" as const } },
+          { nameKo: { contains: options.q, mode: "insensitive" as const } },
+          { nameJp: { contains: options.q, mode: "insensitive" as const } },
+          { nameEn: { contains: options.q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.work.findMany({
+      where,
+      orderBy: { nameKo: "asc" },
+      include: { series: true },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.work.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 /** 단건 조회 (series include). */
 export async function getWorkById(id: number): Promise<WorkWithSeries | null> {
   return prisma.work.findUnique({

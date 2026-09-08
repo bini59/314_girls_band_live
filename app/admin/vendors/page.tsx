@@ -1,5 +1,9 @@
+import { ListPagination } from "@/components/admin/ListPagination";
+import { ListSearch } from "@/components/admin/ListSearch";
+
+import { parseListParams, toPrismaPage } from "@/lib/admin/list-params";
 import { requireAdminSession } from "@/lib/auth/guard";
-import { listVendors } from "@/lib/vendors/repo";
+import { searchVendors } from "@/lib/vendors/repo";
 
 import { VendorsTable } from "./_components/VendorsTable";
 
@@ -15,9 +19,17 @@ export const metadata = {
  * - listVendors() 로 전체 목록을 server-side 페치.
  * - VendorsTable 에서 추가/편집/삭제 UI 제공.
  */
-export default async function AdminVendorsPage() {
+export default async function AdminVendorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   await requireAdminSession();
-  const vendors = await listVendors();
+  const params = parseListParams(await searchParams);
+  const { rows: vendors, total } = await searchVendors({
+    q: params.q,
+    ...toPrismaPage(params),
+  });
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -31,7 +43,21 @@ export default async function AdminVendorsPage() {
         </p>
       </div>
 
-      <VendorsTable vendors={vendors} />
+      <div className="flex flex-col gap-3">
+        <ListSearch
+          action="/admin/vendors"
+          q={params.q}
+          placeholder="slug / 판매처명 검색"
+        />
+
+        <VendorsTable vendors={vendors} q={params.q} />
+
+        <ListPagination
+          basePath="/admin/vendors"
+          params={params}
+          total={total}
+        />
+      </div>
     </div>
   );
 }

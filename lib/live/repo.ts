@@ -139,6 +139,44 @@ export async function listLivesForAdmin(
 }
 
 /**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: titleKo / titleJp / titleEn / venueName (부분일치, 대소문자 무시).
+ * 전체 건수를 함께 반환해야 마지막 페이지를 계산할 수 있다.
+ */
+export async function searchLivesForAdmin(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: Live[]; total: number }> {
+  const where = {
+    deletedAt: null,
+    ...(options.q
+      ? {
+          OR: [
+            { titleKo: { contains: options.q, mode: "insensitive" as const } },
+            { titleJp: { contains: options.q, mode: "insensitive" as const } },
+            { titleEn: { contains: options.q, mode: "insensitive" as const } },
+            { venueName: { contains: options.q, mode: "insensitive" as const } },
+          ],
+        }
+      : {}),
+  };
+
+  const [rows, total] = await Promise.all([
+    prisma.live.findMany({
+      where,
+      orderBy: { updatedAt: "desc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.live.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
+/**
  * updateLive 입력 — partial.
  * JST→UTC 변환은 호출자가 수행.
  */
