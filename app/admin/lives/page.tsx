@@ -1,7 +1,5 @@
 import Link from "next/link";
 
-import { Card, CardContent } from "@/components/ui/card";
-
 import { listLivesForAdmin } from "@/lib/live/repo";
 
 import { LivesTable } from "./_components/LivesTable";
@@ -41,20 +39,16 @@ export default async function AdminLivesPage() {
       </div>
 
       {lives.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
-            <p className="text-base text-[color:var(--color-muted-foreground)]">
-              아직 라이브가 없습니다.
-            </p>
-            <p className="text-xs text-[color:var(--color-muted-foreground)]">
-              상단의 버튼으로 첫 라이브를 등록해보세요.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center gap-3 rounded-[var(--radius-sm)] border border-[color:var(--color-border)] py-12 text-center">
+          <p className="text-base text-[color:var(--color-muted-foreground)]">
+            아직 라이브가 없습니다.
+          </p>
+          <p className="text-xs text-[color:var(--color-muted-foreground)]">
+            상단의 버튼으로 첫 라이브를 등록해보세요.
+          </p>
+        </div>
       ) : (
-        <Card className="overflow-hidden">
-          <LivesTable lives={lives} />
-        </Card>
+        <LivesTable lives={lives} />
       )}
 
       {/* TODO(cycle-C): 정렬/필터/검색/페이지네이션 UI 추가 */}

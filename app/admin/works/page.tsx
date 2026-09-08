@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listWorks } from "@/lib/works/repo";
 
@@ -27,11 +25,7 @@ export default async function AdminWorksPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <WorksTable works={works} />
-        </CardContent>
-      </Card>
+      <WorksTable works={works} />
     </div>
   );
 }

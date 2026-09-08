@@ -141,7 +141,7 @@ export function ApiKeysTable({ apiKeys }: ApiKeysTableProps) {
       ) : null}
 
       {apiKeys.length === 0 ? (
-        <p className="rounded-[var(--radius-md)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
+        <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
           발급된 API 키가 없습니다. 위 폼으로 첫 키를 발급해주세요.
         </p>
       ) : (

@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listBands } from "@/lib/band/repo";
 import { listWorks } from "@/lib/works/repo";
@@ -28,11 +26,7 @@ export default async function AdminBandsPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <BandsTable bands={bands} works={works} />
-        </CardContent>
-      </Card>
+      <BandsTable bands={bands} works={works} />
     </div>
   );
 }

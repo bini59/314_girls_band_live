@@ -200,7 +200,7 @@ export function BandForm({ mode, bandId, initial, works }: BandFormProps) {
             )
           }
           disabled={pending || works.length === 0}
-          className="flex h-9 w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm outline-none transition-shadow shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-9 w-full rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none transition-colors focus-visible:border-[color:var(--color-ring)] disabled:cursor-not-allowed disabled:opacity-60"
           required
         >
           {works.length === 0 ? (

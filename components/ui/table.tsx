@@ -7,7 +7,7 @@ export const Table = React.forwardRef<
   React.HTMLAttributes<HTMLTableElement>
 >(function Table({ className, ...props }, ref) {
   return (
-    <div className="relative w-full overflow-auto rounded-[var(--radius-lg)] border border-[color:var(--color-border)] bg-[color:var(--color-background)]">
+    <div className="relative w-full overflow-auto rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-[color:var(--color-background)]">
       <table
         ref={ref}
         className={cn("w-full caption-bottom border-collapse text-sm", className)}
@@ -25,7 +25,7 @@ export const TableHeader = React.forwardRef<
     <thead
       ref={ref}
       className={cn(
-        "border-b border-[color:var(--color-border)] bg-[color:var(--color-muted)] [&_tr]:border-0",
+        "border-b border-[color:var(--color-border)] [&_tr]:border-0",
         className
       )}
       {...props}
@@ -48,7 +48,7 @@ export const TableRow = React.forwardRef<
     <tr
       ref={ref}
       className={cn(
-        "border-b border-[color:var(--color-border)] transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--color-foreground)_6%,transparent)]",
+        "border-b border-[color:color-mix(in_srgb,var(--color-border)_55%,transparent)] transition-colors last:border-0 hover:bg-[color-mix(in_srgb,var(--color-foreground)_4%,transparent)]",
         className
       )}
       {...props}
@@ -64,7 +64,7 @@ export const TableHead = React.forwardRef<
     <th
       ref={ref}
       className={cn(
-        "h-9 px-3 text-left align-middle text-xs font-semibold whitespace-nowrap text-[color:var(--color-muted-foreground)]",
+        "h-9 px-3 text-left align-middle text-xs font-medium whitespace-nowrap text-[color:var(--color-muted-foreground)]",
         className
       )}
       {...props}

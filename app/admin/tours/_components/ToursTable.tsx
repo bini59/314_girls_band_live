@@ -78,7 +78,7 @@ export function ToursTable({ tours }: ToursTableProps) {
       ) : null}
 
       {tours.length === 0 ? (
-        <p className="rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
+        <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
           등록된 투어가 없습니다. 우측 상단 버튼으로 추가해주세요.
         </p>
       ) : (
