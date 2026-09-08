@@ -154,7 +154,7 @@ export function WorkForm({ mode, workId, initial, series }: WorkFormProps) {
             )
           }
           disabled={pending}
-          className="flex h-9 w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm outline-none transition-shadow shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-9 w-full rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none transition-colors focus-visible:border-[color:var(--color-ring)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <option value={NULL_SERIES_VALUE}>— 시리즈 없음 —</option>
           {series.map((s) => (

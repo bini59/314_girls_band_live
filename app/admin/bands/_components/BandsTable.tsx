@@ -83,7 +83,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
             id="band-filter"
             value={filterWorkId}
             onChange={(e) => setFilterWorkId(e.target.value)}
-            className="flex h-9 rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] outline-none"
+            className="flex h-9 rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none focus-visible:border-[color:var(--color-ring)]"
           >
             <option value={ALL_WORKS}>전체 작품</option>
             {works.map((w) => (
@@ -106,7 +106,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
       </div>
 
       {works.length === 0 ? (
-        <p className="rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] p-4 text-sm text-[color:var(--color-muted-foreground)]">
+        <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-4 text-sm text-[color:var(--color-muted-foreground)]">
           먼저{" "}
           <a href="/admin/works" className="underline">
             작품
@@ -125,7 +125,7 @@ export function BandsTable({ bands, works }: BandsTableProps) {
       ) : null}
 
       {filteredBands.length === 0 ? (
-        <p className="rounded-[var(--radius-lg)] bg-[color:var(--color-muted)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
+        <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
           {bands.length === 0
             ? "등록된 밴드가 없습니다. 우측 상단 버튼으로 추가해주세요."
             : "해당 작품에 등록된 밴드가 없습니다."}

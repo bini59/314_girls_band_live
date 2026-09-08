@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listApiKeys } from "@/lib/api-key/repo";
 
@@ -33,11 +31,7 @@ export default async function AdminApiKeysPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <ApiKeysTable apiKeys={apiKeys} />
-        </CardContent>
-      </Card>
+      <ApiKeysTable apiKeys={apiKeys} />
     </div>
   );
 }

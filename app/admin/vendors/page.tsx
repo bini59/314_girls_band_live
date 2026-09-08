@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listVendors } from "@/lib/vendors/repo";
 
@@ -33,11 +31,7 @@ export default async function AdminVendorsPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <VendorsTable vendors={vendors} />
-        </CardContent>
-      </Card>
+      <VendorsTable vendors={vendors} />
     </div>
   );
 }

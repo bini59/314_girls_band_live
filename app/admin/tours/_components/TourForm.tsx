@@ -157,7 +157,7 @@ export function TourForm({ mode, tourId, initial, works }: TourFormProps) {
             )
           }
           disabled={pending}
-          className="flex h-9 w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm outline-none transition-shadow shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-9 w-full rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none transition-colors focus-visible:border-[color:var(--color-ring)] disabled:cursor-not-allowed disabled:opacity-60"
           required
         >
           <option value={NULL_WORK_VALUE}>— 작품 선택 —</option>
@@ -322,7 +322,7 @@ export function TourForm({ mode, tourId, initial, works }: TourFormProps) {
             update("status", e.target.value as "DRAFT" | "PUBLISHED")
           }
           disabled={pending}
-          className="flex h-9 w-full rounded-[var(--radius-sm)] bg-[color:var(--color-surface-2)] px-3 py-1 text-sm outline-none transition-shadow shadow-[var(--shadow-input)] focus-visible:shadow-[var(--shadow-input-focus)] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex h-9 w-full rounded-[var(--radius-sm)] border border-[color:var(--color-border)] bg-transparent px-3 py-1 text-sm outline-none transition-colors focus-visible:border-[color:var(--color-ring)] disabled:cursor-not-allowed disabled:opacity-60"
         >
           <option value="DRAFT">초안</option>
           <option value="PUBLISHED">공개</option>

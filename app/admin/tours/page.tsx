@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listTours } from "@/lib/tours/repo";
 
@@ -27,11 +25,7 @@ export default async function AdminToursPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <ToursTable tours={tours} />
-        </CardContent>
-      </Card>
+      <ToursTable tours={tours} />
     </div>
   );
 }

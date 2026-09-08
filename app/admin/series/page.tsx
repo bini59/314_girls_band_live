@@ -1,5 +1,3 @@
-import { Card, CardContent } from "@/components/ui/card";
-
 import { requireAdminSession } from "@/lib/auth/guard";
 import { listSeries } from "@/lib/series/repo";
 
@@ -27,11 +25,7 @@ export default async function AdminSeriesPage() {
         </p>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardContent className="p-4">
-          <SeriesTable series={series} />
-        </CardContent>
-      </Card>
+      <SeriesTable series={series} />
     </div>
   );
 }
