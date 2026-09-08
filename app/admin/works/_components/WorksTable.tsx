@@ -26,13 +26,15 @@ import type { WorkWithSeries } from "@/lib/works/repo";
 import { deleteWorkAction } from "../actions";
 
 export interface WorksTableProps {
+  /** 현재 검색어 — 빈 상태 문구 분기에 사용. */
+  q?: string;
   works: WorkWithSeries[];
 }
 
 const DELETE_CONFIRM_MESSAGE =
   "이 작품을 삭제하시겠습니까? 연결된 밴드가 있으면 삭제할 수 없습니다.";
 
-export function WorksTable({ works }: WorksTableProps) {
+export function WorksTable({ works, q }: WorksTableProps) {
   const router = useRouter();
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
     null
@@ -79,7 +81,7 @@ export function WorksTable({ works }: WorksTableProps) {
 
       {works.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          등록된 작품이 없습니다. 우측 상단 버튼으로 추가해주세요.
+          {q ? `"${q}" 검색 결과가 없습니다.` : "등록된 작품이 없습니다. 우측 상단 버튼으로 추가해주세요."}
         </p>
       ) : (
         <Table>

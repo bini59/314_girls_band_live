@@ -35,6 +35,8 @@ import { issueApiKeyAction, revokeApiKeyAction } from "../actions";
 import { RevealKeyDialog } from "./RevealKeyDialog";
 
 export interface ApiKeysTableProps {
+  /** 현재 검색어 — 빈 상태 문구 분기에 사용. */
+  q?: string;
   apiKeys: ApiKey[];
 }
 
@@ -43,7 +45,7 @@ const REVOKE_CONFIRM_MESSAGE =
 
 type Revealed = { name: string; plaintext: string };
 
-export function ApiKeysTable({ apiKeys }: ApiKeysTableProps) {
+export function ApiKeysTable({ apiKeys, q }: ApiKeysTableProps) {
   const router = useRouter();
   const [name, setName] = React.useState("");
   const [nameError, setNameError] = React.useState<string | null>(null);
@@ -142,7 +144,7 @@ export function ApiKeysTable({ apiKeys }: ApiKeysTableProps) {
 
       {apiKeys.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          발급된 API 키가 없습니다. 위 폼으로 첫 키를 발급해주세요.
+          {q ? `"${q}" 검색 결과가 없습니다.` : "발급된 API 키가 없습니다. 위 폼으로 첫 키를 발급해주세요."}
         </p>
       ) : (
         <Table>

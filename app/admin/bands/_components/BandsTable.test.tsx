@@ -5,13 +5,14 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 
 const deleteMock = vi.fn();
 const refreshMock = vi.fn();
+const pushMock = vi.fn();
 
 vi.mock("../actions", () => ({
   deleteBandAction: (...args: unknown[]) => deleteMock(...args),
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ refresh: refreshMock }),
+  useRouter: () => ({ refresh: refreshMock, push: pushMock }),
 }));
 
 import { BandsTable } from "./BandsTable";
@@ -58,6 +59,7 @@ function makeBand(overrides: Partial<BandWithWork> = {}): BandWithWork {
 beforeEach(() => {
   deleteMock.mockReset();
   refreshMock.mockReset();
+  pushMock.mockReset();
 });
 
 afterEach(() => {
@@ -114,7 +116,7 @@ describe("BandsTable — 목록 + 필터", () => {
     expect(row.textContent).not.toContain("https://t.com");
   });
 
-  it("작품 필터 → 해당 작품 밴드만 노출", () => {
+  it("작품 필터 변경 → ?workId= 로 이동 (필터링은 서버에서)", () => {
     const w1 = makeWork({ id: 1, nameKo: "뱅드림" });
     const w2 = makeWork({ id: 2, nameKo: "걸즈밴드 크라이" });
     render(
@@ -131,8 +133,42 @@ describe("BandsTable — 목록 + 필터", () => {
       target: { value: "2" },
     });
 
-    expect(screen.queryByTestId("band-row-1")).toBeNull();
-    expect(screen.getByTestId("band-row-2")).toBeDefined();
+    expect(pushMock).toHaveBeenCalledWith("/admin/bands?workId=2");
+  });
+
+  it("작품 필터 변경 시 검색어를 유지한다", () => {
+    const w1 = makeWork({ id: 1, nameKo: "뱅드림" });
+    const w2 = makeWork({ id: 2, nameKo: "걸즈밴드 크라이" });
+    render(
+      <BandsTable
+        bands={[makeBand({ id: 1, work: w1 })]}
+        works={[w1, w2]}
+        q="mygo"
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("작품"), {
+      target: { value: "2" },
+    });
+
+    expect(pushMock).toHaveBeenCalledWith("/admin/bands?q=mygo&workId=2");
+  });
+
+  it("전체 작품 선택 → workId 를 제거한다", () => {
+    const w1 = makeWork({ id: 1, nameKo: "뱅드림" });
+    render(
+      <BandsTable
+        bands={[makeBand({ id: 1, work: w1 })]}
+        works={[w1]}
+        selectedWorkId={1}
+      />
+    );
+
+    fireEvent.change(screen.getByLabelText("작품"), {
+      target: { value: "__all__" },
+    });
+
+    expect(pushMock).toHaveBeenCalledWith("/admin/bands");
   });
 });
 

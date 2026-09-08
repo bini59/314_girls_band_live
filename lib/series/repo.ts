@@ -16,6 +16,40 @@ export async function listSeries(): Promise<Series[]> {
   });
 }
 
+/**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: slug / nameKo / nameJp / nameEn (부분일치, 대소문자 무시).
+ */
+export async function searchSeries(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: Series[]; total: number }> {
+  const where = options.q
+    ? {
+        OR: [
+          { slug: { contains: options.q, mode: "insensitive" as const } },
+          { nameKo: { contains: options.q, mode: "insensitive" as const } },
+          { nameJp: { contains: options.q, mode: "insensitive" as const } },
+          { nameEn: { contains: options.q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.series.findMany({
+      where,
+      orderBy: { nameKo: "asc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.series.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 /** 단건 조회. */
 export async function getSeriesById(id: number): Promise<Series | null> {
   return prisma.series.findUnique({ where: { id } });

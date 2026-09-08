@@ -30,6 +30,44 @@ export async function listTours(): Promise<TourWithCounts[]> {
   });
 }
 
+/**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: slug / nameKo / nameJp / nameEn (부분일치, 대소문자 무시).
+ */
+export async function searchTours(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: TourWithCounts[]; total: number }> {
+  const where = options.q
+    ? {
+        OR: [
+          { slug: { contains: options.q, mode: "insensitive" as const } },
+          { nameKo: { contains: options.q, mode: "insensitive" as const } },
+          { nameJp: { contains: options.q, mode: "insensitive" as const } },
+          { nameEn: { contains: options.q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.tour.findMany({
+      where,
+      orderBy: { nameKo: "asc" },
+      include: {
+        work: true,
+        _count: { select: { lives: true } },
+      },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.tour.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 /** 특정 작품의 투어만 (Live 폼 셀렉트용). */
 export async function listToursByWorkId(workId: number): Promise<Tour[]> {
   return prisma.tour.findMany({

@@ -26,13 +26,15 @@ import type { TourWithCounts } from "@/lib/tours/repo";
 import { deleteTourAction } from "../actions";
 
 export interface ToursTableProps {
+  /** 현재 검색어 — 빈 상태 문구 분기에 사용. */
+  q?: string;
   tours: TourWithCounts[];
 }
 
 const DELETE_CONFIRM_MESSAGE =
   "이 투어를 삭제하시겠습니까? 연결된 라이브는 보존되고 투어 연결만 해제됩니다.";
 
-export function ToursTable({ tours }: ToursTableProps) {
+export function ToursTable({ tours, q }: ToursTableProps) {
   const router = useRouter();
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
     null
@@ -79,7 +81,7 @@ export function ToursTable({ tours }: ToursTableProps) {
 
       {tours.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          등록된 투어가 없습니다. 우측 상단 버튼으로 추가해주세요.
+          {q ? `"${q}" 검색 결과가 없습니다.` : "등록된 투어가 없습니다. 우측 상단 버튼으로 추가해주세요."}
         </p>
       ) : (
         <Table>

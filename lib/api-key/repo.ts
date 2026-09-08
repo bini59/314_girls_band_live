@@ -22,6 +22,39 @@ export function listApiKeys(): Promise<ApiKey[]> {
   return prisma.apiKey.findMany({ orderBy: { createdAt: "desc" } });
 }
 
+/**
+ * 어드민 목록 페이지용 — 검색 + 페이지네이션.
+ *
+ * 검색 대상: name / keyPrefix (부분일치, 대소문자 무시).
+ * keyHash 는 검색 대상에서 제외한다 — 해시로 키를 역추적할 여지를 주지 않는다.
+ */
+export async function searchApiKeys(options: {
+  q?: string;
+  skip: number;
+  take: number;
+}): Promise<{ rows: ApiKey[]; total: number }> {
+  const where = options.q
+    ? {
+        OR: [
+          { name: { contains: options.q, mode: "insensitive" as const } },
+          { keyPrefix: { contains: options.q, mode: "insensitive" as const } },
+        ],
+      }
+    : {};
+
+  const [rows, total] = await Promise.all([
+    prisma.apiKey.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: options.skip,
+      take: options.take,
+    }),
+    prisma.apiKey.count({ where }),
+  ]);
+
+  return { rows, total };
+}
+
 export function revokeApiKey(id: number): Promise<ApiKey> {
   return prisma.apiKey.update({
     where: { id },

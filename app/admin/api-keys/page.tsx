@@ -1,5 +1,9 @@
+import { ListPagination } from "@/components/admin/ListPagination";
+import { ListSearch } from "@/components/admin/ListSearch";
+
+import { parseListParams, toPrismaPage } from "@/lib/admin/list-params";
 import { requireAdminSession } from "@/lib/auth/guard";
-import { listApiKeys } from "@/lib/api-key/repo";
+import { searchApiKeys } from "@/lib/api-key/repo";
 
 import { ApiKeysTable } from "./_components/ApiKeysTable";
 
@@ -15,9 +19,17 @@ export const metadata = {
  * - listApiKeys() 로 전체 목록을 server-side 페치.
  * - ApiKeysTable 에서 발급/폐기 UI 제공. 평문은 발급 시 1회만 노출.
  */
-export default async function AdminApiKeysPage() {
+export default async function AdminApiKeysPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   await requireAdminSession();
-  const apiKeys = await listApiKeys();
+  const params = parseListParams(await searchParams);
+  const { rows: apiKeys, total } = await searchApiKeys({
+    q: params.q,
+    ...toPrismaPage(params),
+  });
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -31,7 +43,21 @@ export default async function AdminApiKeysPage() {
         </p>
       </div>
 
-      <ApiKeysTable apiKeys={apiKeys} />
+      <div className="flex flex-col gap-3">
+        <ListSearch
+          action="/admin/api-keys"
+          q={params.q}
+          placeholder="키 이름 / prefix 검색"
+        />
+
+        <ApiKeysTable apiKeys={apiKeys} q={params.q} />
+
+        <ListPagination
+          basePath="/admin/api-keys"
+          params={params}
+          total={total}
+        />
+      </div>
     </div>
   );
 }

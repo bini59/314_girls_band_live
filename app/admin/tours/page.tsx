@@ -1,5 +1,9 @@
+import { ListPagination } from "@/components/admin/ListPagination";
+import { ListSearch } from "@/components/admin/ListSearch";
+
+import { parseListParams, toPrismaPage } from "@/lib/admin/list-params";
 import { requireAdminSession } from "@/lib/auth/guard";
-import { listTours } from "@/lib/tours/repo";
+import { searchTours } from "@/lib/tours/repo";
 
 import { ToursTable } from "./_components/ToursTable";
 
@@ -9,9 +13,17 @@ export const metadata = {
   title: "투어 관리 — 원정가고싶다",
 };
 
-export default async function AdminToursPage() {
+export default async function AdminToursPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   await requireAdminSession();
-  const tours = await listTours();
+  const params = parseListParams(await searchParams);
+  const { rows: tours, total } = await searchTours({
+    q: params.q,
+    ...toPrismaPage(params),
+  });
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -25,7 +37,21 @@ export default async function AdminToursPage() {
         </p>
       </div>
 
-      <ToursTable tours={tours} />
+      <div className="flex flex-col gap-3">
+        <ListSearch
+          action="/admin/tours"
+          q={params.q}
+          placeholder="slug / 투어명 검색"
+        />
+
+        <ToursTable tours={tours} q={params.q} />
+
+        <ListPagination
+          basePath="/admin/tours"
+          params={params}
+          total={total}
+        />
+      </div>
     </div>
   );
 }

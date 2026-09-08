@@ -1,5 +1,9 @@
+import { ListPagination } from "@/components/admin/ListPagination";
+import { ListSearch } from "@/components/admin/ListSearch";
+
+import { parseListParams, toPrismaPage } from "@/lib/admin/list-params";
 import { requireAdminSession } from "@/lib/auth/guard";
-import { listSeries } from "@/lib/series/repo";
+import { searchSeries } from "@/lib/series/repo";
 
 import { SeriesTable } from "./_components/SeriesTable";
 
@@ -9,9 +13,17 @@ export const metadata = {
   title: "시리즈 관리 — 원정가고싶다",
 };
 
-export default async function AdminSeriesPage() {
+export default async function AdminSeriesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; page?: string }>;
+}) {
   await requireAdminSession();
-  const series = await listSeries();
+  const params = parseListParams(await searchParams);
+  const { rows: series, total } = await searchSeries({
+    q: params.q,
+    ...toPrismaPage(params),
+  });
 
   return (
     <div className="mx-auto max-w-5xl p-6 lg:p-8">
@@ -25,7 +37,21 @@ export default async function AdminSeriesPage() {
         </p>
       </div>
 
-      <SeriesTable series={series} />
+      <div className="flex flex-col gap-3">
+        <ListSearch
+          action="/admin/series"
+          q={params.q}
+          placeholder="slug / 시리즈명 검색"
+        />
+
+        <SeriesTable series={series} q={params.q} />
+
+        <ListPagination
+          basePath="/admin/series"
+          params={params}
+          total={total}
+        />
+      </div>
     </div>
   );
 }

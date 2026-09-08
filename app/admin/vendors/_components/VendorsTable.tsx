@@ -37,6 +37,8 @@ import {
 } from "./VendorDialog";
 
 export interface VendorsTableProps {
+  /** 현재 검색어 — 빈 상태 문구 분기에 사용. */
+  q?: string;
   vendors: Vendor[];
 }
 
@@ -48,7 +50,7 @@ type DialogState =
 const DELETE_CONFIRM_MESSAGE =
   "이 발매처를 삭제하시겠습니까? 라이브의 판매 라운드에서 참조 중이면 삭제할 수 없습니다.";
 
-export function VendorsTable({ vendors }: VendorsTableProps) {
+export function VendorsTable({ vendors, q }: VendorsTableProps) {
   const router = useRouter();
   const [dialog, setDialog] = React.useState<DialogState>({ open: false });
   const [pendingDeleteId, setPendingDeleteId] = React.useState<number | null>(
@@ -167,7 +169,7 @@ export function VendorsTable({ vendors }: VendorsTableProps) {
 
       {vendors.length === 0 ? (
         <p className="rounded-[var(--radius-sm)] border border-[color:var(--color-border)] p-6 text-center text-sm text-[color:var(--color-muted-foreground)]">
-          등록된 발매처가 없습니다. 우측 상단 버튼으로 추가해주세요.
+          {q ? `"${q}" 검색 결과가 없습니다.` : "등록된 발매처가 없습니다. 우측 상단 버튼으로 추가해주세요."}
         </p>
       ) : (
         <Table>
