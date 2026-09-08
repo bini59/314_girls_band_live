@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "일본 라이브 티켓 사이트 회원가입 / 일본 유심·eSIM 바로가기",
 };
 
-// 빌드 시 prerender 금지 — SiteHeader 가 DB(Prisma) 를 호출하므로 동적 렌더링.
+// 빌드 시 prerender 금지 — 공개 레이아웃이 사이드바 네비용 작품 목록을 DB(Prisma) 에서 읽으므로 동적 렌더링.
 // 단, 페이지 셸은 즉시 응답하고 외부 OG fetch 는 Suspense 로 스트리밍한다.
 // OG 데이터는 fetchOg() 내부 fetch 캐시(86400s)로 캐싱된다.
 export const dynamic = "force-dynamic";
@@ -48,7 +48,7 @@ async function AsyncOgCard({ entry }: { entry: Entry }) {
 
 export default function TicketSitesPage() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">
           티켓사이트 가입!!
@@ -94,6 +94,6 @@ export default function TicketSitesPage() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }

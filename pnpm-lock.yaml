@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@bini59/design':
-        specifier: github:bini59/324_bini59_design#b71a79b
-        version: https://codeload.github.com/bini59/324_bini59_design/tar.gz/b71a79b(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
+        specifier: github:bini59/324_bini59_design#c7b3267
+        version: https://codeload.github.com/bini59/324_bini59_design/tar.gz/c7b3267(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@next/third-parties':
         specifier: ^15.1.0
         version: 15.5.20(next@15.5.18(@babel/core@7.29.0)(@playwright/test@1.60.0)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(react@19.2.6)
@@ -221,8 +221,8 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/b71a79b':
-    resolution: {tarball: https://codeload.github.com/bini59/324_bini59_design/tar.gz/b71a79b}
+  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/c7b3267':
+    resolution: {tarball: https://codeload.github.com/bini59/324_bini59_design/tar.gz/c7b3267}
     version: 0.1.0
     peerDependencies:
       react: ^18 || ^19
@@ -3488,7 +3488,7 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/b71a79b(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
+  '@bini59/design@https://codeload.github.com/bini59/324_bini59_design/tar.gz/c7b3267(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
       react: 19.2.6
       react-dom: 19.2.6(react@19.2.6)

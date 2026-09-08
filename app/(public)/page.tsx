@@ -39,7 +39,7 @@ export default async function HomePage({
   }));
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div>
       <div className="mb-6 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">라이브 캘린더</h1>
@@ -59,6 +59,6 @@ export default async function HomePage({
       <div className="mt-6 grid gap-4 lg:grid-cols-2">
         <CalendarSubscribe feedPath="/api/calendar" />
       </div>
-    </main>
+    </div>
   );
 }

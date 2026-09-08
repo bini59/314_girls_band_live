@@ -29,7 +29,7 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
     : [];
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-6 md:px-6">
+    <div className="max-w-4xl">
       <article>
         <header className="mb-6 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-6 md:flex-row">
           {live.posterUrl && (
@@ -276,7 +276,7 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
           </Section>
         )}
       </article>
-    </main>
+    </div>
   );
 }
 

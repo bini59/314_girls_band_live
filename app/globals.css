@@ -26,8 +26,10 @@
   --shadow-panel: var(--shadow);
 }
 
-/* 어드민 영역: 기존 Spotify 토큰 이름을 design 토큰으로 리맵 (var(--color-*) 참조 전부 한 번에 전환). */
-.admin-theme {
+/* 어드민 + 공개 사이트: 기존 Spotify 토큰 이름을 design 토큰으로 리맵
+ * (var(--color-*) 참조 전부 한 번에 전환). 두 영역이 같은 AppShell 을 쓰므로 매핑도 공유한다. */
+.admin-theme,
+.site-theme {
   --color-page: var(--bg);
   --color-background: var(--panel);
   --color-surface-2: var(--panel-2);

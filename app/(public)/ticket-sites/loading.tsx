@@ -2,7 +2,7 @@ import { OgCardSkeleton } from "@/components/site/og-card-skeleton";
 
 export default function Loading() {
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight">
           티켓사이트 가입!!
@@ -42,6 +42,6 @@ export default function Loading() {
           ))}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
