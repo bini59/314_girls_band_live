@@ -10,6 +10,7 @@ import {
 import { Markdown } from "@/components/ui/markdown";
 import { formatJstHuman } from "@/lib/jst";
 import { getLiveBySlug } from "@/lib/public/queries";
+import { googleMapsSearchUrl } from "@/lib/utils";
 
 const TYPE_LABEL: Record<string, string> = {
   SOLO: "단독 공연",
@@ -71,17 +72,24 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
                 </DetailRow>
               )}
               <DetailRow label="장소">
-                {live.venueUrl ? (
+                <a
+                  href={googleMapsSearchUrl(live.venueName, live.venueAddress)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:underline"
+                  title="구글맵에서 보기"
+                >
+                  {live.venueName}
+                </a>
+                {live.venueUrl && (
                   <a
                     href={live.venueUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:underline"
+                    className="ml-1.5 text-xs text-[color:var(--color-primary)] hover:underline"
                   >
-                    {live.venueName}
+                    공식 ↗
                   </a>
-                ) : (
-                  live.venueName
                 )}
                 {live.venueAddress && (
                   <span className="ml-2 text-xs text-[color:var(--color-muted-foreground)]">
@@ -167,7 +175,15 @@ export default async function LiveDetailPage({ params }: { params: Params }) {
                   </div>
                   {fmt.venueName && (
                     <p className="text-xs text-[color:var(--color-muted-foreground)]">
-                      {fmt.venueName}
+                      <a
+                        href={googleMapsSearchUrl(fmt.venueName)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:underline"
+                        title="구글맵에서 보기"
+                      >
+                        {fmt.venueName}
+                      </a>
                     </p>
                   )}
                   {fmt.tiers.length > 0 ? (
