@@ -23,7 +23,7 @@ export default async function TourPage({ params }: { params: Params }) {
   const dateRange = formatDateRange(tour.startsAt, tour.endsAt);
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div>
       <header className="mb-6 flex flex-col gap-4 border-b border-[color:var(--color-border)] pb-6 md:flex-row">
         {tour.posterUrl && (
           // eslint-disable-next-line @next/next/no-img-element
@@ -88,7 +88,7 @@ export default async function TourPage({ params }: { params: Params }) {
       <CalendarSubscribe
         feedPath={`/api/calendar?tour=${encodeURIComponent(tour.slug)}`}
       />
-    </main>
+    </div>
   );
 }
 

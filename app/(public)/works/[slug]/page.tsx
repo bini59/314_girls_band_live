@@ -19,7 +19,7 @@ export default async function WorkPage({ params }: { params: Params }) {
   const liveCount = lives.length;
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div>
       <header className="mb-6 border-b border-[color:var(--color-border)] pb-6">
         {work.series && (
           <Link
@@ -95,6 +95,6 @@ export default async function WorkPage({ params }: { params: Params }) {
       </section>
 
       <CalendarSubscribe feedPath={`/api/calendar?work=${encodeURIComponent(work.slug)}`} />
-    </main>
+    </div>
   );
 }
