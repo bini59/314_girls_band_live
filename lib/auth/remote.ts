@@ -50,6 +50,17 @@ export function buildAuthLogoutUrl(returnTo: string): string {
   return url.toString();
 }
 
+/**
+ * 321_auth 는 sid 를 상위 도메인(COOKIE_DOMAIN=.bini59.dev)에 심는다. 앱에서 지울 때도
+ * 같은 Domain 을 줘야 브라우저가 같은 쿠키로 보고 삭제한다. localhost 처럼 점이 없으면 host-only.
+ */
+export function sidCookieDomain(): string | undefined {
+  const origin = authOrigin();
+  if (!origin) return undefined;
+  const parent = new URL(origin).hostname.split(".").slice(1).join(".");
+  return parent.includes(".") ? parent : undefined;
+}
+
 export async function verifyRemoteSession(
   sid: string
 ): Promise<RemoteAuthResult> {
@@ -110,11 +121,13 @@ export async function verifyRemoteSession(
 
 export async function revokeRemoteSession(
   sid: string,
-  csrf: string,
   returnTo: string
 ): Promise<boolean> {
-  if (!sid || !csrf || !isRemoteAuthConfigured()) return false;
+  if (!sid || !isRemoteAuthConfigured()) return false;
 
+  // auth 의 /logout 은 double-submit CSRF 인데, auth 가 로그인 콜백에서 csrf 쿠키를 지우므로
+  // 브라우저 쿠키에 기대면 폐기가 조용히 건너뛰어진다. 서버 간 호출이라 짝을 직접 만든다.
+  const csrf = crypto.randomUUID();
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), VERIFY_TIMEOUT_MS);
   try {

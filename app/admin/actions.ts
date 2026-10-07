@@ -8,7 +8,11 @@ import {
   SESSION_COOKIE_NAME,
   buildSessionCookieOptions,
 } from "@/lib/auth/session";
-import { isRemoteAuthConfigured, revokeRemoteSession } from "@/lib/auth/remote";
+import {
+  isRemoteAuthConfigured,
+  revokeRemoteSession,
+  sidCookieDomain,
+} from "@/lib/auth/remote";
 
 /**
  * Server Action: 어드민 로그아웃.
@@ -27,14 +31,14 @@ export async function signOutAction(): Promise<void> {
 
   if (isRemoteAuthConfigured()) {
     const sid = cookieStore.get("sid")?.value ?? "";
-    const csrf = cookieStore.get("csrf")?.value ?? "";
     const returnTo = new URL("/admin/login", process.env.APP_ORIGIN ?? "http://localhost:3000").toString();
-    await revokeRemoteSession(sid, csrf, returnTo);
+    await revokeRemoteSession(sid, returnTo);
     cookieStore.set("sid", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
+      domain: sidCookieDomain(),
       maxAge: 0,
     });
     redirect("/admin/login");
