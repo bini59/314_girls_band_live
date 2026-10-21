@@ -4,7 +4,7 @@
  * Band 는 Work 의 자식이므로 Work 가 먼저 존재해야 한다.
  * 본 사이클에서는 LiveBand 검증을 끄지만, 다음 사이클을 위해 미리 둔다.
  */
-import type { Band, Prisma, Work } from "@prisma/client";
+import type { Band, Prisma, Work } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let workCounter = 0;

@@ -10,7 +10,7 @@ import type {
   TicketSaleTypeInput,
   TicketSaleMethodInput,
 } from "@/lib/admin/schemas/ticket-sale";
-import type { LiveFormatType } from "@prisma/client";
+import type { LiveFormatType } from "@/generated/prisma/client";
 
 export const TICKET_SALE_TYPE_LABELS: Record<TicketSaleTypeInput, string> = {
   FC_SENKO: "FC 선행",

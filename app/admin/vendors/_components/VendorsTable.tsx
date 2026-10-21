@@ -12,7 +12,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { Vendor } from "@prisma/client";
+import type { Vendor } from "@/generated/prisma/client";
 
 import { Button } from "@/components/ui/button";
 import {

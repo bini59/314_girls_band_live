@@ -4,7 +4,7 @@
  * repo.createApiKey 는 평문을 1회만 돌려주므로, 테스트에서 평문을 통제하려면
  * 직접 row 를 삽입한다. 해시는 hashApiKey 로 계산해 실제 저장 형태를 맞춘다.
  */
-import type { ApiKey, Prisma } from "@prisma/client";
+import type { ApiKey, Prisma } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 import { hashApiKey } from "@/lib/api-key/hash";
 

@@ -1,6 +1,6 @@
 # AGENTS — girls_band_live
 
-애니/게임 기반 걸즈밴드 라이브 일정 아카이브. Next.js 15 / React 19 / Prisma / PostgreSQL 16 / pnpm 9 / Node 20+.
+애니/게임 기반 걸즈밴드 라이브 일정 아카이브. Next.js 15 / React 19 / Prisma 7 / D1(SQLite) / pnpm 9 / Node 22.12+.
 도메인 용어는 [CONTEXT.md](CONTEXT.md), 스키마는 `prisma/schema.prisma`.
 
 ## 불변 컨벤션
@@ -12,13 +12,13 @@
 ## 명령
 
 - 검증: `pnpm typecheck`, `pnpm lint`, `pnpm test:run` (husky pre-commit이 같은 순서로 실행. 우회는 `--no-verify`).
-- 통합 테스트 DB: `pnpm db:up && pnpm db:reset:test` (`TEST_DATABASE_URL`).
+- 통합 테스트 DB: Vitest가 ephemeral Miniflare D1을 생성한다. 개발 DB는 `pnpm prisma:migrate` (`--local`).
 - E2E: `pnpm test:e2e`.
-- 스키마 변경 후: `pnpm prisma:migrate` → `pnpm prisma:generate`.
+- 스키마 변경 후: `prisma migrate diff`로 D1 SQL 생성 → `pnpm prisma:migrate` (`--local`) → `pnpm prisma:generate`.
 
 ## 브랜치 / 릴리즈
 
-`feature/* → (PR) → main`. **main push = 즉시 자동 배포**(GHCR 이미지 → migrate → 단일 컨테이너 재시작, blue/green 아님 — 이유는 `docker-compose.yml` 주석). `ci.yml`은 PR→main에서 lint/typecheck/vitest. main 직접 push 금지.
+`feature/* → (PR) → main`. D1 전환 중 배포 workflow는 수동 실행이다. 전환 절차는 `docs/d1-cutover.md`. main 직접 push 금지.
 릴리즈·핫픽스·롤백 절차는 `release` 스킬(`.agents/skills/release/SKILL.md`). 티켓→머지 전체를 한 번에 진행할 때는 `dev-flow` 스킬을 쓸 수 있다(일반 수정에 필수는 아님).
 
 ## graphify

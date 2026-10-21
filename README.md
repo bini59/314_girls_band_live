@@ -6,38 +6,23 @@
 
 ## Stack
 
-- **DB**: PostgreSQL 16 (docker-compose)
-- **DB Admin**: Adminer (docker-compose)
-- **ORM**: Prisma
-- **Runtime**: Node.js 20+, pnpm 9+
+Cloudflare Workers / D1(SQLite), Next.js 15 / React 19, Prisma 7, Node 22.12+, pnpm 9.
 
 ## Quick Start
 
 ```bash
-# 1. 환경변수 준비
 cp .env.example .env
-
-# 2. 의존성 + DB 기동 + 마이그레이션을 한 번에
-pnpm setup
-
-# 또는 단계별로:
-pnpm install          # 의존성 설치
-pnpm db:up            # Postgres + Adminer 컨테이너 기동
-pnpm prisma:migrate   # 마이그레이션 실행 (최초 1회는 이름 입력)
+pnpm install
+pnpm prisma:generate
+pnpm prisma:migrate # local D1 only
+pnpm db:seed        # local vendor seed
+pnpm dev
 ```
 
-## Scripts
-
-| 명령 | 설명 |
-|------|------|
-| `pnpm db:up` | Postgres + Adminer 컨테이너 기동 |
-| `pnpm db:down` | 컨테이너 종료 (데이터는 볼륨에 보존) |
-| `pnpm db:reset` | **볼륨 포함 완전 초기화** 후 재기동 |
-| `pnpm db:logs` | Postgres 로그 팔로우 |
-| `pnpm prisma:migrate` | 개발용 마이그레이션 (`prisma migrate dev`) |
-| `pnpm prisma:migrate:deploy` | 운영용 마이그레이션 적용 |
-| `pnpm prisma:generate` | Prisma Client 재생성 |
-| `pnpm prisma:studio` | Prisma Studio (브라우저 DB 관리 UI) |
+`pnpm test:run`은 별도 ephemeral workerd D1에서 unit/integration 테스트를 실행한다.
+Docker / TEST_DATABASE_URL 설정은 필요하지 않다.
+`pnpm build:worker` → `pnpm exec wrangler dev --local`로 Worker를 검증한다.
+[전환 절차와 롤백](docs/d1-cutover.md)을 참고한다. 리소스 생성과 운영 데이터 이전은 운영자가 수행한다.
 
 ## 어드민 인증
 
@@ -78,61 +63,14 @@ openssl rand -hex 32
 
 E2E 테스트는 자동으로 `webServer.env` 에 자체 평문/해시 쌍을 주입하므로 별도 설정 불필요합니다.
 
-## Production 배포 (로컬/Docker)
+## Production 배포
 
-`docker-compose.yml` 의 `app` 서비스(profile=app)가 production Next.js 컨테이너를 빌드/실행합니다.
-
-### 빠른 시작 (로컬에서 production 빌드 검증)
-
-```bash
-# 1. 비밀번호 해시 + JWT 시크릿 생성
-pnpm tsx -e "import bcrypt from 'bcryptjs'; console.log(bcrypt.hashSync('YOUR_PASSWORD', 12))"
-openssl rand -hex 32
-
-# 2. DB 가 떠 있는지 확인 (없으면 기동)
-pnpm db:up
-
-# 3. (최초 1회) 마이그레이션 적용 — 컨테이너에 prisma CLI 없음
-pnpm prisma:migrate:deploy
-
-# 4. 환경변수 inject 해서 app 컨테이너 빌드/기동
-ADMIN_PASSWORD_HASH='$2a$12$....hash..' \
-JWT_SECRET='....64hex..' \
-docker compose --profile app up -d --build gbl
-
-# 5. http://localhost:31401 로 접속 (APP_PORT 환경변수로 변경 가능)
-```
-
-### 환경별 시크릿 주입 패턴
-
-`.env*` 파일에 bcrypt 해시(`$2a$...`)를 두면 안 됩니다 (위 "어드민 dev 인증" 참조).
-다음 방법으로 process.env 에 직접 주입:
-
-| 환경 | 방법 |
-|---|---|
-| **Vercel / Railway / Cloudflare** | UI 의 환경변수 입력 — 가장 안전, expand 없음 |
-| **K8s** | `Secret` (stringData) → Pod envFrom |
-| **Docker run** | `-e ADMIN_PASSWORD_HASH='$2a$...'` (single-quote 로 셸 expand 차단) |
-| **Docker compose** | `environment: ADMIN_PASSWORD_HASH: ${VAR}` interpolation + 호스트 shell 에서 `export` |
-| **로컬 셸** | `export ADMIN_PASSWORD_HASH='...'` 후 `pnpm start` |
-
-compose 의 `${VAR}` 가 호스트 shell 변수를 참조하므로, CI/CD 에서는 그 shell 변수만 시크릿 매니저 (GitHub Actions secrets, Vault 등) 에서 주입하면 됩니다.
-
-### Dockerfile 노트
-
-- Multi-stage: `node:20-bookworm-slim` (Alpine 대신 — Prisma + OpenSSL 호환)
-- Next.js `output: "standalone"` 모드로 server.js + 필요한 node_modules 만 추출
-- `bcryptjs` 는 Server Action 안에서만 import 되어 trace 누락 → `outputFileTracingIncludes` 로 명시 포함
-- 비-root 유저 (nextjs:nodejs, uid 1001) 로 실행
-- **마이그레이션은 컨테이너에 포함하지 않음** — `pnpm prisma:migrate:deploy` 를 별도로 실행해야 함 (CI/CD step 또는 일회성 migrator 컨테이너)
+기존 Docker 배포와 새 Workers workflow는 모두 수동 실행이다.
+현재 브랜치의 Docker 이미지는 운영용으로 사용하지 않는다. 전환/롤백은 [runbook](docs/d1-cutover.md)을 따른다.
 
 ## Endpoints (개발)
 
-| 서비스 | URL | 비고 |
-|--------|-----|------|
-| Postgres | `localhost:5432` | user=`gbl`, db=`girls_band_live` |
-| Adminer | http://localhost:8080 | System=PostgreSQL, Server=`postgres` |
-| Prisma Studio | http://localhost:5555 | `pnpm prisma:studio` 실행 시 |
+Next dev: http://localhost:3000. Worker preview: http://localhost:8787. D1은 Wrangler 로컬 바인딩을 사용한다.
 
 ## 데이터 모델 개요
 

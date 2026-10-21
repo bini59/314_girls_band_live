@@ -7,7 +7,7 @@
  *
  * listWorks / getWorkById 는 series 를 include 하여 UI 셀렉트/표시에 사용.
  */
-import type { Prisma, Series, Work } from "@prisma/client";
+import type { Prisma, Series, Work } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
@@ -35,10 +35,10 @@ export async function searchWorks(options: {
   const where = options.q
     ? {
         OR: [
-          { slug: { contains: options.q, mode: "insensitive" as const } },
-          { nameKo: { contains: options.q, mode: "insensitive" as const } },
-          { nameJp: { contains: options.q, mode: "insensitive" as const } },
-          { nameEn: { contains: options.q, mode: "insensitive" as const } },
+          { slug: { contains: options.q } },
+          { nameKo: { contains: options.q } },
+          { nameJp: { contains: options.q } },
+          { nameEn: { contains: options.q } },
         ],
       }
     : {};

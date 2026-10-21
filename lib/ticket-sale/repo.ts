@@ -14,9 +14,10 @@ import type {
   TicketSaleType,
   TicketTier,
   Vendor,
-} from "@prisma/client";
+} from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
+import { atomicBatch, statement } from "@/lib/d1";
 
 export type TicketSaleWithRelations = TicketSale & {
   vendor: Vendor;
@@ -29,7 +30,7 @@ export type TicketSaleWithRelations = TicketSale & {
  *  - 정렬: startsAt asc, id asc.
  */
 export async function listTicketSales(
-  liveId: number
+  liveId: number,
 ): Promise<TicketSaleWithRelations[]> {
   const rows = await prisma.ticketSale.findMany({
     where: { liveId },
@@ -65,79 +66,79 @@ export type CreateTicketSaleInput = {
   tierIds: number[];
 };
 
-/**
- * 라운드 생성 — atomic.
- *
- * 단계:
- *  1) tierIds 가 모두 본 liveId 의 format 에 속하는지 검증 (raw SQL 1회).
- *  2) TicketSale row 생성.
- *  3) TicketSaleTier rows 생성 (createMany).
- *  4) vendor + tiers include 한 결과 반환.
- *
- * 한 tierId 라도 cross-live 면 트랜잭션 전체 롤백 → TicketSale row 도 남지 않는다.
- */
+/** Validate ownership first, then atomically insert the sale and all tier links in D1. */
 export async function createTicketSale(
-  input: CreateTicketSaleInput
+  input: CreateTicketSaleInput,
 ): Promise<TicketSaleWithRelations> {
-  return prisma.$transaction(async (tx) => {
-    if (input.tierIds.length > 0) {
-      // tierIds 가 모두 본 liveId 의 format 에 속하는지 검증.
-      const rows = await tx.ticketTier.findMany({
-        where: {
-          id: { in: input.tierIds },
-          format: { liveId: input.liveId },
-        },
-        select: { id: true },
-      });
-      const matched = new Set(rows.map((r) => r.id));
-      for (const tierId of input.tierIds) {
-        if (!matched.has(tierId)) {
-          throw new Error(
-            `createTicketSale: tierId=${tierId} 는 본 라이브(liveId=${input.liveId}) 에 속하지 않는 티어입니다.`
-          );
-        }
-      }
-    }
-
-    const sale = await tx.ticketSale.create({
-      data: {
-        liveId: input.liveId,
-        vendorId: input.vendorId,
-        type: input.type,
-        method: input.method,
-        label: input.label ?? null,
-        startsAt: input.startsAt,
-        endsAt: input.endsAt ?? null,
-        announceAt: input.announceAt ?? null,
-        paymentDeadlineAt: input.paymentDeadlineAt ?? null,
-        url: input.url ?? null,
-        notes: input.notes ?? null,
-      },
-    });
-
-    if (input.tierIds.length > 0) {
-      await tx.ticketSaleTier.createMany({
-        data: input.tierIds.map((tierId) => ({
-          saleId: sale.id,
-          tierId,
-        })),
-      });
-    }
-
-    const reloaded = await tx.ticketSale.findUniqueOrThrow({
-      where: { id: sale.id },
-      include: {
-        vendor: true,
-        tiers: { include: { tier: true } },
-      },
-    });
-
-    const { tiers, ...rest } = reloaded;
-    return {
-      ...rest,
-      tiers: tiers.map((t) => t.tier),
-    };
+  await validateTiers(input.liveId, input.tierIds);
+  const now = new Date();
+  const columns = [
+    "live_id",
+    "vendor_id",
+    "type",
+    "method",
+    "label",
+    "starts_at",
+    "ends_at",
+    "announce_at",
+    "payment_deadline_at",
+    "url",
+    "notes",
+    "created_at",
+    "updated_at",
+  ];
+  const values = [
+    input.liveId,
+    input.vendorId,
+    input.type,
+    input.method,
+    input.label ?? null,
+    input.startsAt,
+    input.endsAt ?? null,
+    input.announceAt ?? null,
+    input.paymentDeadlineAt ?? null,
+    input.url ?? null,
+    input.notes ?? null,
+    now,
+    now,
+  ];
+  // Both statements run in the same D1 batch transaction. The single link INSERT
+  // reads the sale's connection-local last_insert_rowid() for every linked tier.
+  const writes = [
+    statement(
+      `INSERT INTO ticket_sale (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")}) RETURNING id`,
+      values,
+    ),
+  ];
+  if (input.tierIds.length) {
+    writes.push(
+      statement(
+        `INSERT INTO ticket_sale_tier (sale_id,tier_id) SELECT last_insert_rowid(), value FROM json_each(?)`,
+        [JSON.stringify(input.tierIds)],
+      ),
+    );
+  }
+  const results = await atomicBatch(writes);
+  const id = (results[0].results[0] as { id: number }).id;
+  const row = await prisma.ticketSale.findUniqueOrThrow({
+    where: { id },
+    include: { vendor: true, tiers: { include: { tier: true } } },
   });
+  return { ...row, tiers: row.tiers.map((link) => link.tier) };
+}
+
+async function validateTiers(liveId: number, tierIds: number[]) {
+  const rows = await prisma.ticketTier.findMany({
+    where: { id: { in: tierIds }, format: { liveId } },
+    select: { id: true },
+  });
+  const matched = new Set(rows.map((row) => row.id));
+  for (const id of tierIds) {
+    if (!matched.has(id))
+      throw new Error(
+        `tierId=${id} 는 본 라이브(liveId=${liveId}) 에 속하지 않는 티어입니다.`,
+      );
+  }
 }
 
 export type UpdateTicketSalePatch = Partial<{
@@ -159,7 +160,7 @@ export type UpdateTicketSalePatch = Partial<{
  */
 export async function updateTicketSale(
   saleId: number,
-  patch: UpdateTicketSalePatch
+  patch: UpdateTicketSalePatch,
 ): Promise<TicketSale> {
   const existing = await prisma.ticketSale.findUnique({
     where: { id: saleId },
@@ -179,56 +180,56 @@ export async function updateTicketSale(
  * 사용 동기: UI 가 update + setTiers 를 순차 호출하면, 한쪽이 실패해도 다른
  * 쪽 변경이 이미 커밋된 상태가 된다 (HIGH 리뷰 issue 대응).
  *
- * - cross-live tier 가드는 동일 트랜잭션 안에서 강제.
+ * - cross-live tier 가드는 쓰기 전에 읽기로 검증.
  * - patch 가 비어 있으면 update 는 생략하고 tier 만 교체.
  */
 export async function updateTicketSaleWithTiers(
   saleId: number,
   patch: UpdateTicketSalePatch,
-  tierIds: number[] | null
+  tierIds: number[] | null,
 ): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const sale = await tx.ticketSale.findUnique({
-      where: { id: saleId },
-      select: { id: true, liveId: true },
-    });
-    if (!sale) {
-      throw new Error(`TicketSale(id=${saleId}) 를 찾을 수 없습니다.`);
-    }
-
-    if (Object.keys(patch).length > 0) {
-      await tx.ticketSale.update({
-        where: { id: saleId },
-        data: patch as Prisma.TicketSaleUncheckedUpdateInput,
-      });
-    }
-
-    if (tierIds !== null) {
-      if (tierIds.length > 0) {
-        const rows = await tx.ticketTier.findMany({
-          where: {
-            id: { in: tierIds },
-            format: { liveId: sale.liveId },
-          },
-          select: { id: true },
-        });
-        const matched = new Set(rows.map((r) => r.id));
-        for (const tierId of tierIds) {
-          if (!matched.has(tierId)) {
-            throw new Error(
-              `updateTicketSaleWithTiers: tierId=${tierId} 는 본 라이브(liveId=${sale.liveId}) 에 속하지 않는 티어입니다.`
-            );
-          }
-        }
-      }
-      await tx.ticketSaleTier.deleteMany({ where: { saleId } });
-      if (tierIds.length > 0) {
-        await tx.ticketSaleTier.createMany({
-          data: tierIds.map((tierId) => ({ saleId, tierId })),
-        });
-      }
-    }
+  const sale = await prisma.ticketSale.findUnique({
+    where: { id: saleId },
+    select: { liveId: true },
   });
+  if (!sale) throw new Error(`TicketSale(id=${saleId}) 를 찾을 수 없습니다.`);
+  if (tierIds !== null) await validateTiers(sale.liveId, tierIds);
+  const columns: Record<keyof UpdateTicketSalePatch, string> = {
+    vendorId: "vendor_id",
+    type: "type",
+    method: "method",
+    label: "label",
+    startsAt: "starts_at",
+    endsAt: "ends_at",
+    announceAt: "announce_at",
+    paymentDeadlineAt: "payment_deadline_at",
+    url: "url",
+    notes: "notes",
+  };
+  const entries = Object.entries(patch).filter(
+    ([, value]) => value !== undefined,
+  ) as [keyof UpdateTicketSalePatch, unknown][];
+  const writes = [];
+  if (entries.length)
+    writes.push(
+      statement(
+        `UPDATE ticket_sale SET ${entries.map(([key]) => `"${columns[key]}" = ?`).join(",")}, updated_at = ? WHERE id = ?`,
+        [...entries.map(([, value]) => value), new Date(), saleId],
+      ),
+    );
+  if (tierIds !== null) {
+    writes.push(
+      statement("DELETE FROM ticket_sale_tier WHERE sale_id = ?", [saleId]),
+    );
+    if (tierIds.length)
+      writes.push(
+        statement(
+          "INSERT INTO ticket_sale_tier (sale_id,tier_id) SELECT ?, value FROM json_each(?)",
+          [saleId, JSON.stringify(tierIds)],
+        ),
+      );
+  }
+  await atomicBatch(writes);
 }
 
 /**
@@ -248,46 +249,13 @@ export async function deleteTicketSale(saleId: number): Promise<void> {
  * 라운드의 tier 링크를 통째로 교체.
  *  - tierIds [] 은 모든 링크 제거 (clears all).
  *  - 모든 tierId 는 sale 의 liveId 와 동일 라이브의 format 에 속해야 한다.
- *  - 트랜잭션: deleteMany + createMany.
+ *  - D1 batch: DELETE + INSERT SELECT.
  */
 export async function setTicketSaleTiers(
   saleId: number,
-  tierIds: number[]
+  tierIds: number[],
 ): Promise<void> {
-  await prisma.$transaction(async (tx) => {
-    const sale = await tx.ticketSale.findUnique({
-      where: { id: saleId },
-      select: { id: true, liveId: true },
-    });
-    if (!sale) {
-      throw new Error(`TicketSale(id=${saleId}) 를 찾을 수 없습니다.`);
-    }
-
-    if (tierIds.length > 0) {
-      const rows = await tx.ticketTier.findMany({
-        where: {
-          id: { in: tierIds },
-          format: { liveId: sale.liveId },
-        },
-        select: { id: true },
-      });
-      const matched = new Set(rows.map((r) => r.id));
-      for (const tierId of tierIds) {
-        if (!matched.has(tierId)) {
-          throw new Error(
-            `setTicketSaleTiers: tierId=${tierId} 는 본 라이브(liveId=${sale.liveId}) 에 속하지 않는 티어입니다.`
-          );
-        }
-      }
-    }
-
-    await tx.ticketSaleTier.deleteMany({ where: { saleId } });
-    if (tierIds.length > 0) {
-      await tx.ticketSaleTier.createMany({
-        data: tierIds.map((tierId) => ({ saleId, tierId })),
-      });
-    }
-  });
+  await updateTicketSaleWithTiers(saleId, {}, tierIds);
 }
 
 /**

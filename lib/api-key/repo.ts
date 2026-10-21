@@ -3,7 +3,7 @@
  *
  * 평문은 createApiKey 반환값으로만 노출되고 DB 에는 keyHash + keyPrefix 만 저장한다.
  */
-import type { ApiKey } from "@prisma/client";
+import type { ApiKey } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
 import { generateApiKey } from "./hash";
@@ -36,8 +36,8 @@ export async function searchApiKeys(options: {
   const where = options.q
     ? {
         OR: [
-          { name: { contains: options.q, mode: "insensitive" as const } },
-          { keyPrefix: { contains: options.q, mode: "insensitive" as const } },
+          { name: { contains: options.q } },
+          { keyPrefix: { contains: options.q } },
         ],
       }
     : {};

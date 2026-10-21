@@ -15,7 +15,7 @@
 import { useMemo } from "react";
 
 import { Checkbox } from "@/components/ui/checkbox";
-import type { LiveFormatType } from "@prisma/client";
+import type { LiveFormatType } from "@/generated/prisma/client";
 
 import {
   LIVE_FORMAT_TYPE_LABELS,

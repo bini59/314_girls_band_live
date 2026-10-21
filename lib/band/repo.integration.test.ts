@@ -1,7 +1,7 @@
 /**
  * Band 레포지토리 통합 테스트.
  *
- *  - searchBands: ILIKE 다국어 검색, 빈 입력 가드, limit clamp.
+ *  - searchBands: LIKE 다국어 검색, 빈 입력 가드, limit clamp.
  *  - listBandsByIds: bulk 조회, 빈 배열 가드.
  *  - getBandById: 단건 조회.
  */
@@ -32,7 +32,7 @@ describe("searchBands", () => {
     expect(await searchBands("   ")).toEqual([]);
   });
 
-  it("nameKo ILIKE 매칭", async () => {
+  it("nameKo LIKE 매칭", async () => {
     await createBand({ slug: "b-ko-1", nameKo: "마이고", nameJp: "MyGO" });
     await createBand({ slug: "b-ko-2", nameKo: "토게토게", nameJp: "togenashi" });
 
@@ -40,13 +40,13 @@ describe("searchBands", () => {
     expect(result.map((b) => b.slug)).toEqual(["b-ko-1"]);
   });
 
-  it("nameJp ILIKE 매칭 (대소문자 무시)", async () => {
+  it("nameJp LIKE 매칭 (대소문자 무시)", async () => {
     await createBand({ slug: "b-jp-1", nameKo: "k", nameJp: "MyGO!!!!!" });
     const result = await searchBands("mygo");
     expect(result.map((b) => b.slug)).toEqual(["b-jp-1"]);
   });
 
-  it("nameEn ILIKE 매칭", async () => {
+  it("nameEn LIKE 매칭", async () => {
     await createBand({
       slug: "b-en-1",
       nameKo: "k",
@@ -57,7 +57,7 @@ describe("searchBands", () => {
     expect(result.map((b) => b.slug)).toEqual(["b-en-1"]);
   });
 
-  it("slug ILIKE 매칭", async () => {
+  it("slug LIKE 매칭", async () => {
     await createBand({ slug: "afterglow-unique", nameKo: "k", nameJp: "j" });
     const result = await searchBands("afterglow");
     expect(result.map((b) => b.slug)).toEqual(["afterglow-unique"]);

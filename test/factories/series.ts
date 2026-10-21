@@ -4,7 +4,7 @@
  *  - 카운터 기반 slug 로 중복 회피.
  *  - 기본값: "러브라이브 시리즈" 샘플.
  */
-import type { Prisma, Series } from "@prisma/client";
+import type { Prisma, Series } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let counter = 0;

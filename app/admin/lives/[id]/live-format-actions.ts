@@ -25,7 +25,7 @@ import {
 } from "@/lib/live-format/repo";
 import { prisma } from "@/lib/db";
 import { isPositiveInt as isValidId } from "@/lib/utils";
-import type { LiveFormat, LiveFormatType } from "@prisma/client";
+import type { LiveFormat, LiveFormatType } from "@/generated/prisma/client";
 
 /** 직렬화된 LiveFormat (Date 가 없으므로 그대로 사용 가능). */
 export type SerializedLiveFormat = {

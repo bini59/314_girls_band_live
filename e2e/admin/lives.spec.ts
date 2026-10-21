@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma-node/client";
+import { localDb } from "../db";
 import { signInAsAdmin } from "../../test/helpers/auth";
 
 /**
@@ -105,7 +106,7 @@ test.describe("어드민 라이브 관리 — 헤더 등록·편집·공개", ()
       throw new Error("편집기 URL 에서 liveId 를 파싱하지 못함");
     }
     const liveId = Number(liveIdMatch[1]);
-    const prisma = new PrismaClient();
+    const prisma = await localDb();
     try {
       const work = await prisma.work.upsert({
         where: { slug: `e2e-work-${TS}` },

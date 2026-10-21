@@ -23,7 +23,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { Vendor } from "@prisma/client";
+import type { Vendor } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import {

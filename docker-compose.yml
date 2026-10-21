@@ -1,3 +1,4 @@
+# LEGACY: rollback reference only. Use the pre-D1 commit/image; current code requires Workers D1.
 services:
   postgres:
     image: postgres:16-alpine

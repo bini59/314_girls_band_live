@@ -4,7 +4,7 @@
  * 발매처(e+, 로손, FC 등) row 를 빠르게 만들기 위한 헬퍼.
  * slug 는 카운터 기반으로 중복 회피.
  */
-import type { Prisma, Vendor } from "@prisma/client";
+import type { Prisma, Vendor } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let counter = 0;

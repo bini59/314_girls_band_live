@@ -14,7 +14,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { ApiKey } from "@prisma/client";
+import type { ApiKey } from "@/generated/prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

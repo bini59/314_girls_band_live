@@ -1,5 +1,6 @@
 import { test, expect, request } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma-node/client";
+import { localDb } from "../db";
 
 import { signInAsAdmin } from "../../test/helpers/auth";
 
@@ -94,7 +95,7 @@ test.describe("어드민 투어 → 공개 페이지 → iCal", () => {
     const liveId = Number(liveIdMatch[1]);
 
     // 5. LiveBand 시드 + 공개 (게이트 충족용)
-    const prisma = new PrismaClient();
+    const prisma = await localDb();
     try {
       // 작품/투어 id 조회.
       const work = await prisma.work.findUnique({ where: { slug: WORK_SLUG } });

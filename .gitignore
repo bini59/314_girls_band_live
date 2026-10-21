@@ -63,3 +63,11 @@ graphify-out/
 # graphify-installed git hooks (call the local graphify binary; not portable to teammates)
 .husky/post-commit
 .husky/post-checkout
+
+/generated/
+/.wrangler/
+/.open-next/
+
+__pycache__/
+/snapshot.json
+/import.sql

@@ -5,7 +5,7 @@
  *  - slug 는 globally unique.
  *  - 삭제 시 TicketSale.vendorId 가 onDelete: Restrict 이므로 사용 중이면 P2003 → "사용 중인 발매처는 삭제할 수 없습니다".
  */
-import type { Vendor } from "@prisma/client";
+import type { Vendor } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
@@ -30,8 +30,8 @@ export async function searchVendors(options: {
   const where = options.q
     ? {
         OR: [
-          { slug: { contains: options.q, mode: "insensitive" as const } },
-          { name: { contains: options.q, mode: "insensitive" as const } },
+          { slug: { contains: options.q } },
+          { name: { contains: options.q } },
         ],
       }
     : {};

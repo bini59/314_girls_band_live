@@ -4,7 +4,7 @@
  * verifyApiKey 는 순수 검증기라 lastUsedAt 갱신은 라우트 책임.
  * 성공 시 touchLastUsed 를 fire-and-forget 로 호출한다 (요청 흐름 비차단).
  */
-import type { ApiKey } from "@prisma/client";
+import type { ApiKey } from "@/generated/prisma/client";
 
 import { verifyApiKey } from "@/lib/auth/api-key-guard";
 import { touchLastUsed } from "@/lib/api-key/repo";

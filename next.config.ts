@@ -1,9 +1,15 @@
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  // Docker production 이미지용 — `.next/standalone/` 으로 server.js + 필요한
-  // node_modules 만 추출해서 이미지 슬림화. pnpm 가상 스토어 symlink 도 해소.
+  webpack(config) {
+    config.experiments = { ...config.experiments, asyncWebAssembly: true };
+    config.module.rules.push({ test: /\.wasm$/, type: "webassembly/async" });
+    return config;
+  },
+  // OpenNext consumes the standalone Next build.
   output: "standalone",
   // @bini59/design 은 dist 없이 TS 소스를 그대로 배포한다.
   transpilePackages: ["@bini59/design"],
@@ -13,11 +19,11 @@ const nextConfig: NextConfig = {
   outputFileTracingIncludes: {
     "*": ["./node_modules/bcryptjs/**"],
   },
+  typedRoutes: false,
   experimental: {
     // typedRoutes 는 동적 라우트 segment 와의 호환 문제로 본 사이클에서 비활성화.
     // 정적 분석이 필요해지면 다시 활성화하면서 모든 Link/router.push 에
     // Route 타입을 명시할 것.
-    typedRoutes: false,
   },
 };
 

@@ -18,7 +18,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { ApiKey } from "@prisma/client";
+import type { ApiKey } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import { apiKeyIssueSchema } from "@/lib/admin/schemas/api-key";

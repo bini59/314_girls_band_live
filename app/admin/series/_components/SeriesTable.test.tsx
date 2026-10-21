@@ -32,7 +32,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { SeriesTable } from "./SeriesTable";
-import type { Series } from "@prisma/client";
+import type { Series } from "@/generated/prisma/client";
 
 function makeSeries(overrides: Partial<Series> = {}): Series {
   return {

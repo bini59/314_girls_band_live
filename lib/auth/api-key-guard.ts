@@ -5,7 +5,7 @@
  * 유효한 활성 키면 ApiKey, 아니면 null. throw 하지 않는다.
  * lastUsedAt 갱신은 라우트 레이어 책임(guard 는 순수).
  */
-import type { ApiKey } from "@prisma/client";
+import type { ApiKey } from "@/generated/prisma/client";
 
 import { findActiveByHash } from "@/lib/api-key/repo";
 import { hashApiKey } from "@/lib/api-key/hash";
