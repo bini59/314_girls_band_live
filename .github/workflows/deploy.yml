@@ -40,6 +40,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - id: stamp
+        run: echo "ts=$(date +%s)" >> "$GITHUB_OUTPUT"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -49,6 +52,8 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-,format=long
             type=sha,prefix=sha-
+            # sha-<commit>-<unix time>: Flux (bini59/homelab apps/gbl) rolls out the newest one
+            type=raw,value=sha-${{ github.sha }}-${{ steps.stamp.outputs.ts }}
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -64,56 +69,5 @@ jobs:
           # 다른 아키텍처 서버 추가 시 platforms 에 추가.
           platforms: linux/arm64
 
-  # ---------------------------------------------------------------------------
-  # 2) 실제 배포는 self-hosted runner (배포 서버 그 자체).
-  #
-  # 보안 가드:
-  #   - 이 잡은 `push: main` 이벤트에서만 트리거 (fork PR 트리거 불가).
-  #   - 아래 `if` 로 다시 한 번 검증 — 워크플로 트리거 설정이 잘못돼도 fork 코드 실행 차단.
-  #   - 러너는 `gbl-prod` 라벨로 등록 권장 (다른 self-hosted 러너와 분리).
-  # ---------------------------------------------------------------------------
-  deploy:
-    name: Deploy (self-hosted)
-    needs: build-and-push
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: [self-hosted, linux, gbl-prod]
-    timeout-minutes: 15
-    environment: production
-    permissions:
-      contents: read
-      packages: read
-    env:
-      AUTH_ORIGIN: https://auth.bini59.dev
-      CLIENT_ID: gbl
-      APP_ORIGIN: https://band-live.bini59.dev
-      AUTH_REQUIRED_ROLE: admin
-      APP_SECRET: ${{ secrets.GBL_APP_SECRET }}
-    defaults:
-      run:
-        working-directory: ${{ vars.DEPLOY_PATH || '/opt/girls_band_live' }}
-    steps:
-      - name: Sync repository (fetch + reset to main)
-        run: |
-          git fetch origin main
-          git reset --hard origin/main
-
-      - name: Log in to GHCR (for image pull)
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
-
-      - name: Ensure postgres running
-        run: docker compose up -d postgres
-
-      - name: Deploy (pull image → migrate → restart)
-        env:
-          APP_IMAGE: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
-        run: |
-          docker compose --profile app pull gbl
-          # DB 마이그레이션 (idempotent) — gbl 서비스 정의로 .env(DATABASE_URL 등) 주입.
-          # -u 0:0 / HOME=/tmp: npx 캐시 쓰기 권한 회피. --no-deps: postgres 재기동 방지.
-          docker compose --profile app run --rm --no-deps \
-            -u 0:0 -e HOME=/tmp --entrypoint sh gbl \
-            -c "cd /tmp && npx -y prisma@5.22.0 migrate deploy --schema=/app/prisma/schema.prisma"
-          docker compose --profile app up -d gbl
-
-      - name: Cleanup old images
-        run: docker image prune -f
+# Production (band-live.bini59.dev) is the gbl Deployment on the Oracle k3s, managed by Flux from bini59/homelab
+# (apps/gbl): it rolls out the newest sha-<commit>-<unix time> tag and runs prisma migrate deploy in an init container.

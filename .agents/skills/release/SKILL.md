@@ -5,7 +5,7 @@ description: Release girls_band_live — production(feature→main PR 자동 배
 
 # Release: girls_band_live
 
-브랜치 흐름: `feature/* → (PR) → main → push trigger → GHCR 빌드 + self-hosted 러너에서 컨테이너 교체 배포`.
+브랜치 흐름: `feature/* → (PR) → main → push trigger → GHCR 빌드 → Flux가 k3s에 배포 (bini59/homelab apps/gbl)`.
 별도 스테이징·통합 브랜치 없음. `main`에 직접 push 금지 — 항상 PR.
 버전 = 프로덕션 릴리즈 단위(semver). 일상 커밋은 `package.json` version을 건드리지 않는다.
 
@@ -24,14 +24,14 @@ description: Release girls_band_live — production(feature→main PR 자동 배
    ```
 3. **머지** — CI GREEN 후 머지. `push → main`이 `.github/workflows/deploy.yml`을 트리거:
    - **build-and-push** (ubuntu-24.04-arm): 이미지 빌드 → GHCR 푸시.
-   - **deploy** (self-hosted `gbl-prod` 러너): 이미지 pull → `prisma migrate deploy` → `docker compose --profile app up -d gbl`(단일 컨테이너 재시작, ~1초 다운타임). blue/green 아님 — 이유는 `docker-compose.yml` 주석.
+   - **배포** (Oracle k3s, namespace `gbl`): Flux가 새 `sha-<commit>-<unix time>` 태그를 homelab에 커밋하고 롤아웃한다(2~3분). init container가 `prisma migrate deploy`를 먼저 돌리고, 실패하면 이전 pod가 계속 서비스한다.
 4. **태그 + GitHub Release** — 배포 후 태그를 찍는다 (태그 형식 `vX.Y.Z`).
    ```bash
    git checkout main && git pull
    git tag v0.6.0 && git push origin v0.6.0
    gh release create v0.6.0 --generate-notes
    ```
-5. **검증** — `/api/health`가 200인지, `docker compose ps gbl`이 healthy인지 확인.
+5. **검증** — `/api/health`가 200인지, `kubectl -n gbl get pods`가 Ready인지 확인.
 
 ## Hotfix (프로덕션 긴급 패치)
 
