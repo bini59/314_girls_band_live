@@ -12,7 +12,6 @@ import { z } from "zod";
  */
 const envSchema = z
   .object({
-    DATABASE_URL: z.string().min(1),
     ADMIN_PASSWORD_HASH: z.string().optional(),
     JWT_SECRET: z.string().optional(),
     AUTH_ORIGIN: z.string().optional(),
@@ -90,7 +89,7 @@ export function parseEnv(): AppEnv {
  * 모듈을 로드하는 것만으로 throw 되어 분기별 동작을 검증할 수 없다.
  * 첫 접근 시점에 한 번만 검증/캐시한다.
  *
- * 사용처에서는 `env.DATABASE_URL` 처럼 평소처럼 접근하면 된다.
+ * 사용처에서는 `env.AUTH_ORIGIN` 처럼 평소처럼 접근하면 된다.
  */
 let _env: AppEnv | undefined;
 export const env: AppEnv = new Proxy({} as AppEnv, {

@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma-node/client";
+import { localDb } from "../db";
 
 import { signInAsAdmin } from "../../test/helpers/auth";
 
@@ -22,8 +23,8 @@ const WORK_SLUG = `gate-test-work-${TS}`;
 
 let prisma: PrismaClient;
 
-test.beforeAll(() => {
-  prisma = new PrismaClient();
+test.beforeAll(async () => {
+  prisma = await localDb();
 });
 
 test.afterAll(async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Live } from "@prisma/client";
+import type { Live } from "@/generated/prisma/client";
 
 import {
   createAutoSaveController,

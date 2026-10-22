@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import { fillDefaultTime, jstLocalToUtc } from "@/lib/admin/jst-datetime";

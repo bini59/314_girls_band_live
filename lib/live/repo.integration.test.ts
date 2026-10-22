@@ -10,10 +10,10 @@
  *  - publishLive 는 헤더 필수 필드 충족 + status 전이만 책임 (LiveBand 검증은 다음 사이클).
  *
  * 격리:
- *  - 각 it 전에 resetDb() 로 모든 도메인 테이블 TRUNCATE CASCADE.
+ *  - 각 it 전에 resetDb() 로 모든 도메인 테이블 DELETE (FK dependency order).
  */
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
-import type { Live } from "@prisma/client";
+import type { Live } from "@/generated/prisma/client";
 
 import { resetDb, testDb, disconnectDb } from "@/test/helpers/db";
 import { createLive, buildLiveData } from "@/test/factories/live";
@@ -250,7 +250,7 @@ describe("searchLivesForAdmin", () => {
 
     expect((await searchLivesForAdmin({ q: "결속", skip: 0, take: 20 })).total).toBe(1);
     expect((await searchLivesForAdmin({ q: "結束", skip: 0, take: 20 })).total).toBe(1);
-    // 대소문자 무시 — ILIKE
+    // 대소문자 무시 — LIKE
     expect((await searchLivesForAdmin({ q: "zepp", skip: 0, take: 20 })).total).toBe(1);
     expect((await searchLivesForAdmin({ q: "ZEPP", skip: 0, take: 20 })).total).toBe(1);
   });

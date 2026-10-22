@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma-node/client";
+import { localDb } from "../db";
 import { signInAsAdmin } from "../../test/helpers/auth";
 
 /**
@@ -31,7 +32,7 @@ test.describe("어드민 풀 플로우 — 헤더부터 공개까지", () => {
   let prisma: PrismaClient;
 
   test.beforeAll(async () => {
-    prisma = new PrismaClient();
+    prisma = await localDb();
     // 검색용 시드 밴드 1개 — 다른 테스트와 충돌 없게 unique slug 보장.
     await prisma.work
       .upsert({

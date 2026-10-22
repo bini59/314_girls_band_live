@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Live } from "@prisma/client";
+import type { Live } from "@/generated/prisma/client";
 
 import { Button } from "@/components/ui/button";
 

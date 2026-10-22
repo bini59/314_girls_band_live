@@ -7,8 +7,9 @@
  *  - status 는 enum LiveStatus (DRAFT / PUBLISHED).
  *  - mutation 은 가능한 한 단일 prisma 호출. 트랜잭션은 슬러그 중복 같이 race 필요한 곳만.
  */
-import type { Live, LiveStatus, LiveType, Prisma } from "@prisma/client";
+import type { Live, LiveStatus, LiveType, Prisma } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/prisma-errors";
 
@@ -153,12 +154,7 @@ export async function searchLivesForAdmin(options: {
     deletedAt: null,
     ...(options.q
       ? {
-          OR: [
-            { titleKo: { contains: options.q, mode: "insensitive" as const } },
-            { titleJp: { contains: options.q, mode: "insensitive" as const } },
-            { titleEn: { contains: options.q, mode: "insensitive" as const } },
-            { venueName: { contains: options.q, mode: "insensitive" as const } },
-          ],
+          id: { in: await searchIds("live", options.q) },
         }
       : {}),
   };

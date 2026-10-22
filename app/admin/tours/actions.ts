@@ -11,7 +11,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { Tour } from "@prisma/client";
+import type { Tour } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import { tourCreateSchema, tourUpdateSchema } from "@/lib/admin/schemas/tour";

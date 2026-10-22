@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { BandsTable } from "./BandsTable";
-import type { Work } from "@prisma/client";
+import type { Work } from "@/generated/prisma/client";
 import type { BandWithWork } from "@/lib/band/repo";
 
 function makeWork(overrides: Partial<Work> = {}): Work {

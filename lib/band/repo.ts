@@ -1,7 +1,7 @@
 /**
  * Band 도메인 DB I/O 단일 진입점.
  *
- *  - searchBands: 다국어 (nameKo / nameJp / nameEn / slug) ILIKE 검색.
+ *  - searchBands: 다국어 (nameKo / nameJp / nameEn / slug) LIKE 검색.
  *    빈 입력은 [] (전체 조회 방지). limit 상한 50.
  *  - listBandsByIds: 라인업 표시용 bulk 조회.
  *  - getBandById: 단건 조회.
@@ -11,9 +11,10 @@
  * 본 repo 는 Band 의 부모(Work) 까지는 검색 함수에서 include 하지 않는다.
  * 어드민 CRUD 는 work include 가 필요하므로 listBands 가 명시적으로 include 한다.
  */
-import type { Band, Work } from "@prisma/client";
-import { Prisma } from "@prisma/client";
+import type { Band, Work } from "@/generated/prisma/client";
+import { Prisma } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { ConflictError } from "@/lib/errors";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
@@ -25,7 +26,7 @@ const MAX_SEARCH_LIMIT = 50;
 
 /**
  * 다국어 + slug 부분 일치 검색.
- *  - mode: insensitive → PG ILIKE.
+ *  - Unicode 대소문자를 정규화한 부분 일치 검색.
  *  - 빈/공백 query → [] (전체 row 노출 방지).
  *  - limit 은 MAX_SEARCH_LIMIT (50) 으로 clamp.
  */
@@ -41,12 +42,7 @@ export async function searchBands(
 
   return prisma.band.findMany({
     where: {
-      OR: [
-        { nameKo: { contains: trimmed, mode: "insensitive" } },
-        { nameJp: { contains: trimmed, mode: "insensitive" } },
-        { nameEn: { contains: trimmed, mode: "insensitive" } },
-        { slug: { contains: trimmed, mode: "insensitive" } },
-      ],
+      id: { in: await searchIds("band", trimmed) },
     },
     take: safeLimit,
     orderBy: { id: "asc" },
@@ -109,12 +105,7 @@ export async function searchBandsForAdmin(options: {
     ...(options.workId !== undefined ? { workId: options.workId } : {}),
     ...(options.q
       ? {
-          OR: [
-            { slug: { contains: options.q, mode: "insensitive" as const } },
-            { nameKo: { contains: options.q, mode: "insensitive" as const } },
-            { nameJp: { contains: options.q, mode: "insensitive" as const } },
-            { nameEn: { contains: options.q, mode: "insensitive" as const } },
-          ],
+          id: { in: await searchIds("band", options.q) },
         }
       : {}),
   };

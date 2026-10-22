@@ -21,7 +21,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { Series } from "@prisma/client";
+import type { Series } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import {

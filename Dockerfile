@@ -1,3 +1,4 @@
+# LEGACY: rollback reference only. Use the pre-D1 commit/image; current code requires Workers D1.
 # syntax=docker/dockerfile:1
 #
 # girls_band_live — Next.js + Prisma production image.

@@ -5,7 +5,7 @@
  *  - 컨벤션: 항상 LIVE_VENUE 1개 이상 (ensureDefaultFormat 으로 보장).
  *  - 삭제 시 TicketTier → TicketSaleTier 까지 cascade.
  */
-import type { LiveFormat, LiveFormatType, TicketTier } from "@prisma/client";
+import type { LiveFormat, LiveFormatType, TicketTier } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
 import { isNotFoundError } from "@/lib/prisma-errors";

@@ -20,10 +20,15 @@ export function isNotFoundError(err: unknown): boolean {
 
 /** P2002 — unique constraint violation. */
 export function isUniqueViolation(err: unknown): boolean {
-  return getPrismaErrorCode(err) === "P2002";
+  return getPrismaErrorCode(err) === "P2002" || isD1Constraint(err, "UNIQUE constraint failed");
 }
 
 /** P2003 — foreign key constraint violation. */
 export function isForeignKeyViolation(err: unknown): boolean {
-  return getPrismaErrorCode(err) === "P2003";
+  return getPrismaErrorCode(err) === "P2003" || isD1Constraint(err, "FOREIGN KEY constraint failed");
+}
+
+// Direct D1 batch writes bypass Prisma's error translation.
+function isD1Constraint(err: unknown, message: string): boolean {
+  return err instanceof Error && err.message.startsWith("D1_ERROR:") && err.message.includes(message);
 }

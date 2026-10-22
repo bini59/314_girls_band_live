@@ -8,8 +8,9 @@
  *
  *  listTours / getTourById 는 work 와 live count 를 include 하여 UI 표시에 사용.
  */
-import type { Prisma, Tour, TourStatus, Work } from "@prisma/client";
+import type { Prisma, Tour, TourStatus, Work } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
@@ -42,12 +43,7 @@ export async function searchTours(options: {
 }): Promise<{ rows: TourWithCounts[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { slug: { contains: options.q, mode: "insensitive" as const } },
-          { nameKo: { contains: options.q, mode: "insensitive" as const } },
-          { nameJp: { contains: options.q, mode: "insensitive" as const } },
-          { nameEn: { contains: options.q, mode: "insensitive" as const } },
-        ],
+        id: { in: await searchIds("tour", options.q) },
       }
     : {};
 

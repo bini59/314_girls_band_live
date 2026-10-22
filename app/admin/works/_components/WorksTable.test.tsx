@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
 
 import { WorksTable } from "./WorksTable";
 import type { WorkWithSeries } from "@/lib/works/repo";
-import type { Series } from "@prisma/client";
+import type { Series } from "@/generated/prisma/client";
 
 function makeSeries(overrides: Partial<Series> = {}): Series {
   return {

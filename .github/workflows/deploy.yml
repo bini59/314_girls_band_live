@@ -1,10 +1,9 @@
 name: Deploy
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
-# 같은 시점 다중 배포 차단. main 외에서는 트리거 자체가 안 됨.
+# Legacy rollback reference: manual only. Run from the pre-D1 commit, never this migration code.
 concurrency:
   group: deploy-main
   cancel-in-progress: false

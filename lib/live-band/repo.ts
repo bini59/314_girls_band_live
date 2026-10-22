@@ -7,9 +7,10 @@
  *  - isHeadliner 는 헤드라이너 여부 (페스에서 의미).
  *  - reorder 는 단일 트랜잭션으로 전체 라이브의 출연 순서를 갱신.
  */
-import type { Band, LiveBand } from "@prisma/client";
+import type { Band, LiveBand } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
+import { atomicBatch, statement } from "@/lib/d1";
 import { isUniqueViolation } from "@/lib/prisma-errors";
 
 /**
@@ -18,7 +19,7 @@ import { isUniqueViolation } from "@/lib/prisma-errors";
  *  - band relation include.
  */
 export async function listLiveBands(
-  liveId: number
+  liveId: number,
 ): Promise<(LiveBand & { band: Band })[]> {
   return prisma.liveBand.findMany({
     where: { liveId },
@@ -51,7 +52,7 @@ export async function addLiveBand(input: AddLiveBandInput): Promise<LiveBand> {
   } catch (err) {
     if (isUniqueViolation(err)) {
       throw new Error(
-        `LiveBand(liveId=${input.liveId}, bandId=${input.bandId}) 는 이미 추가된 밴드입니다.`
+        `LiveBand(liveId=${input.liveId}, bandId=${input.bandId}) 는 이미 추가된 밴드입니다.`,
       );
     }
     throw err;
@@ -70,14 +71,14 @@ export type UpdateLiveBandPatch = Partial<{
 export async function updateLiveBand(
   liveId: number,
   bandId: number,
-  patch: UpdateLiveBandPatch
+  patch: UpdateLiveBandPatch,
 ): Promise<LiveBand> {
   const existing = await prisma.liveBand.findUnique({
     where: { liveId_bandId: { liveId, bandId } },
   });
   if (!existing) {
     throw new Error(
-      `LiveBand(liveId=${liveId}, bandId=${bandId}) 를 찾을 수 없습니다.`
+      `LiveBand(liveId=${liveId}, bandId=${bandId}) 를 찾을 수 없습니다.`,
     );
   }
   return prisma.liveBand.update({
@@ -92,7 +93,7 @@ export async function updateLiveBand(
  */
 export async function removeLiveBand(
   liveId: number,
-  bandId: number
+  bandId: number,
 ): Promise<void> {
   await prisma.liveBand.deleteMany({
     where: { liveId, bandId },
@@ -107,7 +108,7 @@ export async function removeLiveBand(
  */
 export async function reorderLiveBands(
   liveId: number,
-  orderedBandIds: number[]
+  orderedBandIds: number[],
 ): Promise<void> {
   if (orderedBandIds.length === 0) {
     throw new Error("reorderLiveBands: orderedBandIds 가 비어 있습니다.");
@@ -123,17 +124,17 @@ export async function reorderLiveBands(
   for (const bandId of orderedBandIds) {
     if (!existingIds.has(bandId)) {
       throw new Error(
-        `reorderLiveBands: bandId=${bandId} 는 liveId=${liveId} 에 속하지 않습니다.`
+        `reorderLiveBands: bandId=${bandId} 는 liveId=${liveId} 에 속하지 않습니다.`,
       );
     }
   }
 
-  await prisma.$transaction(
+  await atomicBatch(
     orderedBandIds.map((bandId, idx) =>
-      prisma.liveBand.update({
-        where: { liveId_bandId: { liveId, bandId } },
-        data: { order: idx },
-      })
-    )
+      statement(
+        'UPDATE live_band SET "order" = ? WHERE live_id = ? AND band_id = ?',
+        [idx, liveId, bandId],
+      ),
+    ),
   );
 }

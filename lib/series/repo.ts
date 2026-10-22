@@ -4,8 +4,9 @@
  *  - slug 는 globally unique.
  *  - 삭제 시 Work.seriesId onDelete: SetNull → 연결된 작품이 detach 되며 삭제 자체는 자유.
  */
-import type { Series } from "@prisma/client";
+import type { Series } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
@@ -28,12 +29,7 @@ export async function searchSeries(options: {
 }): Promise<{ rows: Series[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { slug: { contains: options.q, mode: "insensitive" as const } },
-          { nameKo: { contains: options.q, mode: "insensitive" as const } },
-          { nameJp: { contains: options.q, mode: "insensitive" as const } },
-          { nameEn: { contains: options.q, mode: "insensitive" as const } },
-        ],
+        id: { in: await searchIds("series", options.q) },
       }
     : {};
 

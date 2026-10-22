@@ -8,7 +8,7 @@
  * 참고: `band.ts` 의 `createWork` 는 Band 의 부모 셋업용으로 남겨두었다.
  * 두 팩토리는 서로 독립적이며, 카운터를 공유하지 않는다.
  */
-import type { Prisma, Work } from "@prisma/client";
+import type { Prisma, Work } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let counter = 0;

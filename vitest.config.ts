@@ -3,7 +3,17 @@ import react from "@vitejs/plugin-react";
 import path from "node:path";
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: "worker-wasm-in-node-tests",
+      enforce: "pre",
+      load(id) {
+        if (!id.endsWith(".wasm?module")) return;
+        return `import { readFileSync } from "node:fs"; export default new WebAssembly.Module(readFileSync(${JSON.stringify(id.slice(0, -7))}));`;
+      },
+    },
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "."),
@@ -16,8 +26,8 @@ export default defineConfig({
     include: ["**/*.{test,spec}.ts", "**/*.{test,spec}.tsx"],
     exclude: ["**/node_modules/**", "**/e2e/**", "**/.next/**"],
     // 인프라 보강: DB 격리를 위해 단일 fork 로 실행한다.
-    // integration 테스트가 같은 Postgres 인스턴스를 공유하므로 병렬 실행 시
-    // TRUNCATE 가 서로의 fixture 를 덮어쓴다.
+    // integration 테스트가 같은 D1 인스턴스를 공유하므로 병렬 실행 시
+    // reset 이 서로의 fixture 를 덮어쓴다.
     pool: "forks",
     poolOptions: {
       forks: {

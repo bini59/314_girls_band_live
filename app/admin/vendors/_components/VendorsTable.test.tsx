@@ -39,7 +39,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { VendorsTable } from "./VendorsTable";
-import type { Vendor } from "@prisma/client";
+import type { Vendor } from "@/generated/prisma/client";
 
 function makeVendor(overrides: Partial<Vendor> = {}): Vendor {
   return {

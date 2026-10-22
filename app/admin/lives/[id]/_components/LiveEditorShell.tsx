@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Band, Live, LiveBand, LiveFormat, TicketTier, Vendor } from "@prisma/client";
+import type { Band, Live, LiveBand, LiveFormat, TicketTier, Vendor } from "@/generated/prisma/client";
 
 import { Badge } from "@/components/ui/badge";
 

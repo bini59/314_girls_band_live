@@ -5,12 +5,12 @@
   "description": "애니/게임 기반 걸즈밴드 라이브 일정 아카이브",
   "packageManager": "pnpm@9.12.0",
   "engines": {
-    "node": ">=20"
+    "node": ">=22.12"
   },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "opennextjs-cloudflare preview",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
@@ -18,31 +18,25 @@
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:install": "playwright install",
-    "db:up": "docker compose up -d postgres adminer",
-    "db:down": "docker compose down",
-    "db:logs": "docker compose logs -f postgres",
-    "db:reset": "docker compose down -v && docker compose up -d postgres adminer",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:studio": "prisma studio",
+    "prisma:migrate": "wrangler d1 migrations apply DB --local",
+    "prepare": "husky",
     "db:seed": "tsx prisma/seed.ts",
-    "db:create:test": "docker exec gbl-postgres psql -U gbl -d postgres -tc \"SELECT 1 FROM pg_database WHERE datname = 'girls_band_live_test'\" | grep -q 1 || docker exec gbl-postgres psql -U gbl -d postgres -c 'CREATE DATABASE girls_band_live_test;'",
-    "db:migrate:test": "DATABASE_URL=$TEST_DATABASE_URL prisma migrate deploy",
-    "db:reset:test": "pnpm db:create:test && pnpm db:migrate:test",
-    "prepare": "husky"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "build:worker": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare preview",
+    "typegen": "wrangler types",
+    "test:worker": "tsx scripts/smoke-worker.ts"
   },
   "dependencies": {
     "@bini59/design": "github:bini59/324_bini59_design#cb24cb4",
-    "@next/third-parties": "^15.5.27",
-    "@prisma/client": "^5.22.0",
+    "@next/third-parties": "^15.5.28",
+    "@opennextjs/cloudflare": "1.14.8",
+    "@prisma/adapter-d1": "7.8.0",
+    "@prisma/client": "7.8.0",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "jose": "^5.9.6",
-    "next": "^15.5.27",
+    "next": "^15.5.28",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-markdown": "^10.1.0",
@@ -51,6 +45,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261021.1",
     "@playwright/test": "^1.49.1",
     "@tailwindcss/postcss": "^4.3.0",
     "@testing-library/dom": "^10.4.1",
@@ -62,13 +57,20 @@
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^2.1.8",
     "eslint": "^9.17.0",
-    "eslint-config-next": "^15.5.27",
+    "eslint-config-next": "^15.5.28",
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
-    "prisma": "^5.22.0",
+    "miniflare": "^4.20260730.0",
+    "prisma": "7.8.0",
     "tailwindcss": "^4.3.0",
     "tsx": "^4.21.0",
     "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "wrangler": "^4.151.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@ast-grep/napi": "0.41.0"
+    }
   }
 }

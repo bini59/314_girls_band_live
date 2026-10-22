@@ -12,7 +12,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { Work } from "@prisma/client";
+import type { Work } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import { workCreateSchema, workUpdateSchema } from "@/lib/admin/schemas/work";

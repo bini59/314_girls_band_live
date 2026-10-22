@@ -40,16 +40,33 @@ function loadDotenv(filename: string): void {
 
 loadDotenv(".env");
 
-// 통합 테스트는 TEST_DATABASE_URL 을 사용해야 한다.
-// `prisma/seed.ts` 등 내부에서 `new PrismaClient()` 를 만드는 코드는
-// 환경변수의 DATABASE_URL 을 그대로 읽는다. 테스트 격리를 위해
-// DATABASE_URL 을 TEST_DATABASE_URL 로 강제 덮어쓴다.
-if (!process.env.TEST_DATABASE_URL) {
-  throw new Error(
-    "TEST_DATABASE_URL is required for integration tests. Refusing to use production DATABASE_URL."
+// Each Vitest process owns an ephemeral local workerd D1 instance.
+import { Miniflare } from "miniflare";
+import type { D1Database } from "@cloudflare/workers-types";
+import { afterAll } from "vitest";
+if (typeof document === "undefined") {
+  const mf = new Miniflare({
+    modules: true,
+    script: "export default { fetch() { return new Response('test'); } }",
+    compatibilityDate: "2026-07-30",
+    d1Databases: ["DB"],
+  });
+  const db = await mf.getD1Database("DB");
+  (globalThis as typeof globalThis & { __testD1?: D1Database }).__testD1 =
+    db as unknown as D1Database;
+  const sql = readFileSync(resolve("prisma/migrations/0001_init.sql"), "utf8");
+  await db.batch(
+    sql
+      .replace(/--[^\n]*/g, "")
+      .split(";")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => db.prepare(s)),
   );
+  afterAll(async () => {
+    await mf.dispose();
+  });
 }
-process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 
 // React Testing Library cleanup — 각 test 후 unmount + DOM 비움.
 // jsdom 환경의 component test 만 영향을 받는다 (node env 테스트는 무시).

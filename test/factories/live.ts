@@ -6,7 +6,7 @@
  * - `overrides` 로 필드 단위 변경.
  * - DB 에 실제 row 를 만들고 반환 (integration 테스트 용).
  */
-import type { Live, Prisma } from "@prisma/client";
+import type { Live, Prisma } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let counter = 0;

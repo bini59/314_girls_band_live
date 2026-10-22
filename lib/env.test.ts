@@ -5,7 +5,7 @@ describe("Vitest sanity", () => {
     expect(process.env.TZ).toBe("Asia/Tokyo");
   });
 
-  it("프로세스 환경에 DATABASE_URL이 정의되어 있다 (.env 로드 확인)", () => {
+  it("프로세스 환경에 접근할 수 있다", () => {
     // dotenv는 Next.js가 자동 로드. Vitest는 process.env에 .env를 직접 안 읽으므로
     // 이 테스트는 셋업 검증용이며 Phase 2에서 dotenv 명시 로드 시 활성화될 예정.
     // 지금은 환경 그 자체가 정의되는지만 확인.
@@ -51,7 +51,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("production + AUTH_ORIGIN 미설정 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("AUTH_ORIGIN", "");
     vi.stubEnv("CLIENT_ID", "gbl");
     vi.stubEnv("APP_SECRET", "server-secret");
@@ -64,7 +63,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("production + APP_SECRET 미설정 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
     vi.stubEnv("CLIENT_ID", "gbl");
     vi.stubEnv("APP_SECRET", "");
@@ -76,7 +74,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("production + APP_ORIGIN 이 HTTPS가 아니면 → throw", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
     vi.stubEnv("CLIENT_ID", "gbl");
     vi.stubEnv("APP_SECRET", "server-secret");
@@ -88,7 +85,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("development 환경에서는 SSO 설정이 optional (throw 없음)", async () => {
     vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("JWT_SECRET", "");
     vi.stubEnv("ADMIN_PASSWORD_HASH", "");
 
@@ -98,7 +94,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("test 환경에서도 SSO 설정이 optional (throw 없음)", async () => {
     vi.stubEnv("NODE_ENV", "test");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("JWT_SECRET", "");
     vi.stubEnv("ADMIN_PASSWORD_HASH", "");
 
@@ -108,7 +103,6 @@ describe("parseEnv - production 환경 강제 검증", () => {
 
   it("production + SSO 설정이 모두 적법 → throw 없음", async () => {
     vi.stubEnv("NODE_ENV", "production");
-    vi.stubEnv("DATABASE_URL", "postgres://test");
     vi.stubEnv("AUTH_ORIGIN", "https://auth.bini59.dev");
     vi.stubEnv("CLIENT_ID", "gbl");
     vi.stubEnv("APP_SECRET", "server-secret");

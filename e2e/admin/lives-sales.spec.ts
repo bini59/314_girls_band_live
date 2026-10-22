@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "../../generated/prisma-node/client";
+import { localDb } from "../db";
 
 import { signInAsAdmin } from "../../test/helpers/auth";
 
@@ -23,9 +24,7 @@ import { signInAsAdmin } from "../../test/helpers/auth";
 const TS = String(Date.now());
 
 async function seedLive(): Promise<{ liveId: number; slug: string }> {
-  const url = process.env.DATABASE_URL;
-  if (!url) throw new Error("DATABASE_URL 이 비어있다.");
-  const prisma = new PrismaClient({ datasources: { db: { url } } });
+  const prisma = await localDb();
   try {
     const slug = `e2e-sales-${TS}`;
     const live = await prisma.live.create({

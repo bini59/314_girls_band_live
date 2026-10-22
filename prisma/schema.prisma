@@ -20,12 +20,21 @@
 // =====================================================================
 
 generator client {
-  provider = "prisma-client-js"
+  provider = "prisma-client"
+  output = "../generated/prisma"
+  runtime = "cloudflare"
+}
+
+// Node tooling (seed / Playwright) uses the same D1 adapter against local workerd.
+generator tooling {
+  provider = "prisma-client"
+  output = "../generated/prisma-node"
+  runtime = "nodejs"
+  moduleFormat = "cjs"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite"
 }
 
 // =====================================================================

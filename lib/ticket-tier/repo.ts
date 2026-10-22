@@ -6,9 +6,10 @@
  *  - 삭제 시 TicketSaleTier 까지 cascade.
  *  - cross-live 가드: `getTierLiveId` 로 action 레이어가 권한 검사.
  */
-import type { TicketTier } from "@prisma/client";
+import type { TicketTier } from "@/generated/prisma/client";
 
 import { prisma } from "@/lib/db";
+import { atomicBatch, statement } from "@/lib/d1";
 import { isNotFoundError } from "@/lib/prisma-errors";
 
 /**
@@ -31,7 +32,7 @@ export type CreateTicketTierInput = {
 };
 
 export async function createTicketTier(
-  input: CreateTicketTierInput
+  input: CreateTicketTierInput,
 ): Promise<TicketTier> {
   return prisma.ticketTier.create({
     data: {
@@ -56,7 +57,7 @@ export type UpdateTicketTierPatch = Partial<{
  */
 export async function updateTicketTier(
   tierId: number,
-  patch: UpdateTicketTierPatch
+  patch: UpdateTicketTierPatch,
 ): Promise<TicketTier> {
   const existing = await prisma.ticketTier.findUnique({
     where: { id: tierId },
@@ -92,7 +93,7 @@ export async function deleteTicketTier(tierId: number): Promise<void> {
  */
 export async function reorderTicketTiers(
   formatId: number,
-  orderedTierIds: number[]
+  orderedTierIds: number[],
 ): Promise<void> {
   if (orderedTierIds.length === 0) {
     throw new Error("reorderTicketTiers: orderedTierIds 가 비어 있습니다.");
@@ -107,18 +108,18 @@ export async function reorderTicketTiers(
   for (const tierId of orderedTierIds) {
     if (!existingIds.has(tierId)) {
       throw new Error(
-        `reorderTicketTiers: tierId=${tierId} 는 formatId=${formatId} 에 속하지 않습니다.`
+        `reorderTicketTiers: tierId=${tierId} 는 formatId=${formatId} 에 속하지 않습니다.`,
       );
     }
   }
 
-  await prisma.$transaction(
+  await atomicBatch(
     orderedTierIds.map((tierId, idx) =>
-      prisma.ticketTier.update({
-        where: { id: tierId },
-        data: { order: idx },
-      })
-    )
+      statement(
+        'UPDATE ticket_tier SET "order" = ?, updated_at = ? WHERE format_id = ? AND id = ?',
+        [idx, new Date(), formatId, tierId],
+      ),
+    ),
   );
 }
 

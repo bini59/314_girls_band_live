@@ -8,7 +8,7 @@
  *  - findActiveByHash(hash): revokedAt == null 인 것만 반환.
  *  - touchLastUsed(id): lastUsedAt 갱신.
  *
- * 격리: 각 it 전에 resetDb() (api_key 포함 TRUNCATE CASCADE).
+ * 격리: 각 it 전에 resetDb() (api_key 포함 DELETE (FK dependency order)).
  */
 import { describe, it, expect, beforeEach, afterAll } from "vitest";
 

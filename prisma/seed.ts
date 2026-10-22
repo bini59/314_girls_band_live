@@ -15,7 +15,11 @@
  * 실행:
  *   pnpm db:seed
  */
-import { PrismaClient } from "@prisma/client";
+type SeedClient = { vendor: { upsert(args: {
+  where: { slug: string };
+  create: { slug: string; name: string; baseUrl: string };
+  update: { name: string; baseUrl: string };
+}): Promise<unknown> } };
 import { fileURLToPath } from "node:url";
 
 export const VENDORS = [
@@ -43,7 +47,7 @@ function assertNotProduction(): void {
  * Vendor 6개를 멱등 upsert. PrismaClient 를 주입받아 connection 누수 방지.
  * 미주입 시 기본 클라이언트 생성 후 호출자가 disconnect 책임 (CLI 진입점에서만).
  */
-export async function seedVendors(client: PrismaClient): Promise<void> {
+export async function seedVendors(client: SeedClient): Promise<void> {
   for (const v of VENDORS) {
     await client.vendor.upsert({
       where: { slug: v.slug },
@@ -53,20 +57,25 @@ export async function seedVendors(client: PrismaClient): Promise<void> {
   }
 }
 
-export async function seedAll(client: PrismaClient): Promise<void> {
+export async function seedAll(client: SeedClient): Promise<void> {
   await seedVendors(client);
 }
 
 // ─── CLI 진입점 (ESM 호환) ──────────────────────────────────────────
 async function runCli(): Promise<void> {
   assertNotProduction();
-  const prisma = new PrismaClient();
+  const { getPlatformProxy } = await import("wrangler");
+  const { PrismaD1 } = await import("@prisma/adapter-d1");
+  const { PrismaClient } = await import("../generated/prisma-node/client");
+  const proxy = await getPlatformProxy<{ DB: import("@cloudflare/workers-types").D1Database }>();
+  const prisma = new PrismaClient({ adapter: new PrismaD1(proxy.env.DB) });
   try {
     await seedAll(prisma);
     // eslint-disable-next-line no-console
     console.log("Seed completed");
   } finally {
     await prisma.$disconnect();
+    await proxy.dispose();
   }
 }
 

@@ -14,7 +14,7 @@
  */
 
 import { revalidatePath } from "next/cache";
-import type { Band } from "@prisma/client";
+import type { Band } from "@/generated/prisma/client";
 
 import { requireAdminSession } from "@/lib/auth/guard";
 import { bandCreateSchema, bandUpdateSchema } from "@/lib/admin/schemas/band";

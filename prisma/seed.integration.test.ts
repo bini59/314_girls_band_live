@@ -1,8 +1,7 @@
 /**
  * Vendor 시드 & Live status/soft-delete 스키마 통합 테스트.
  *
- * 본 테스트는 실제 Postgres 가 켜져 있어야 한다.
- * TEST_DATABASE_URL (또는 fallback DATABASE_URL) 사용.
+ * 테스트 셋업이 로컬 workerd D1을 생성한다.
  *
  * 검증 항목:
  *  - LiveStatus enum (DRAFT, PUBLISHED) 존재
@@ -26,47 +25,11 @@ beforeEach(async () => {
   await resetDb();
 });
 
-describe("schema - LiveStatus enum / Live.status / Live.deletedAt", () => {
-  it("LiveStatus enum 의 'DRAFT', 'PUBLISHED' 두 값이 DB 에 존재한다", async () => {
-    const rows = await testDb.$queryRawUnsafe<Array<{ enumlabel: string }>>(
-      `SELECT e.enumlabel
-       FROM pg_enum e
-       JOIN pg_type t ON e.enumtypid = t.oid
-       WHERE t.typname = 'LiveStatus'
-       ORDER BY e.enumsortorder`
-    );
-    const labels = rows.map((r) => r.enumlabel);
-    expect(labels).toEqual(["DRAFT", "PUBLISHED"]);
-  });
-
-  it("live 테이블에 'status' 컬럼 (LiveStatus, NOT NULL, default DRAFT) 이 존재한다", async () => {
-    const rows = await testDb.$queryRawUnsafe<
-      Array<{
-        column_name: string;
-        is_nullable: string;
-        column_default: string | null;
-        udt_name: string;
-      }>
-    >(
-      `SELECT column_name, is_nullable, column_default, udt_name
-       FROM information_schema.columns
-       WHERE table_name = 'live' AND column_name = 'status'`
-    );
-    expect(rows.length).toBe(1);
-    expect(rows[0].is_nullable).toBe("NO");
-    expect(rows[0].column_default).toMatch(/DRAFT/);
-  });
-
-  it("live 테이블에 'deleted_at' 컬럼 (timestamp, nullable) 이 존재한다", async () => {
-    const rows = await testDb.$queryRawUnsafe<
-      Array<{ column_name: string; is_nullable: string; data_type: string }>
-    >(
-      `SELECT column_name, is_nullable, data_type
-       FROM information_schema.columns
-       WHERE table_name = 'live' AND column_name = 'deleted_at'`
-    );
-    expect(rows.length).toBe(1);
-    expect(rows[0].is_nullable).toBe("YES");
+describe("SQLite schema", () => {
+  it("stores enums as TEXT and preserves defaults / nullable dates", async () => {
+    const rows = await testDb.$queryRawUnsafe<Array<{name: string; type: string; notnull: bigint; dflt_value: string | null}>>("PRAGMA table_info(live)");
+    expect(rows.find(row => row.name === "status")).toMatchObject({ type: "TEXT", dflt_value: "'DRAFT'" });
+    expect(Number(rows.find(row => row.name === "deleted_at")?.notnull)).toBe(0);
   });
 });
 

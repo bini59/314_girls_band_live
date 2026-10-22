@@ -5,7 +5,7 @@
  *  - workId 는 호출자가 명시적으로 넘긴다 (Work FK 필수).
  *  - 기본값: 학마스 LIVE TOUR 標 샘플.
  */
-import type { Prisma, Tour } from "@prisma/client";
+import type { Prisma, Tour } from "@/generated/prisma/client";
 import { testDb } from "../helpers/db";
 
 let counter = 0;
