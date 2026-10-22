@@ -9,6 +9,7 @@
  */
 import type { Live, LiveStatus, LiveType, Prisma } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { isUniqueViolation } from "@/lib/prisma-errors";
 
@@ -153,12 +154,7 @@ export async function searchLivesForAdmin(options: {
     deletedAt: null,
     ...(options.q
       ? {
-          OR: [
-            { titleKo: { contains: options.q } },
-            { titleJp: { contains: options.q } },
-            { titleEn: { contains: options.q } },
-            { venueName: { contains: options.q } },
-          ],
+          id: { in: await searchIds("live", options.q) },
         }
       : {}),
   };

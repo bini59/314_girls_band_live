@@ -1,3 +1,11 @@
+import { searchBands, searchBandsForAdmin } from "@/lib/band/repo";
+import { searchWorks } from "@/lib/works/repo";
+import { searchSeries } from "@/lib/series/repo";
+import { searchTours } from "@/lib/tours/repo";
+import { searchLivesForAdmin } from "@/lib/live/repo";
+import { createWorkRow } from "@/test/factories/work";
+import { createSeries } from "@/test/factories/series";
+import { createTour } from "@/test/factories/tour";
 import { beforeEach, describe, expect, it } from "vitest";
 import { Prisma } from "@/generated/prisma/client";
 import { getDb } from "@/lib/db";
@@ -43,6 +51,18 @@ async function fixture() {
   return { live, vendor, format, tiers, input };
 }
 describe("D1 batch atomicity", () => {
+  it("keeps the second sale ID fixed across multiple tier links", async () => {
+    const { input } = await fixture();
+    const first = await createTicketSale(input);
+    const second = await createTicketSale(input);
+    for (const sale of [first, second]) {
+      expect(sale.tiers.map((tier) => tier.id).sort()).toEqual([...input.tierIds].sort());
+      const links = await testDb.ticketSaleTier.findMany({ where: { saleId: sale.id } });
+      expect(links.map((link) => link.tierId).sort()).toEqual([...input.tierIds].sort());
+    }
+    expect(await testDb.ticketSale.count()).toBe(2);
+    expect(await testDb.ticketSaleTier.count()).toBe(4);
+  });
   it("rolls back the sale insert when its link statement fails", async () => {
     const { input, tiers } = await fixture();
     await expect(
@@ -161,17 +181,27 @@ describe("SQLite compatibility", () => {
     expect(live.startAt.toISOString()).toBe(date.toISOString());
     expect(live.status).toBe("DRAFT");
   });
-  it("LIKE folds ASCII but preserves non-ASCII case, Japanese and Korean", async () => {
-    const band = await createBand({ nameEn: "MyGO μ's 日本 한국" });
-    for (const query of ["mygo", "μ's", "日本", "한국"]) {
-      expect(
-        await testDb.band.count({ where: { nameEn: { contains: query } } }),
-      ).toBe(1);
+  it("preserves Unicode case-insensitive search before pagination and counts", async () => {
+    const nameEn = "MyGO μ's 日本 한국 École";
+    const band = await createBand({ nameEn });
+    await createBand({ nameEn });
+    const work = await createWorkRow({ nameEn });
+    await createSeries({ nameEn });
+    await createTour({ workId: work.id, nameEn });
+    await createLive({ titleEn: nameEn });
+    await createLive({ titleEn: nameEn, deletedAt: new Date() });
+    for (const query of ["mygo", "Μ'S", "日本", "한국", "ÉCOLE", "e\u0301cole", "Μ%日本", "Μ_S"]) {
+      expect((await searchBands(query, 1)).map((row) => row.id)).toEqual([band.id]);
+      const page = await searchBandsForAdmin({ q: query, skip: 1, take: 1 });
+      expect(page.total).toBe(2);
+      expect(page.rows).toHaveLength(1);
+      for (const search of [searchWorks, searchSeries, searchTours, searchLivesForAdmin]) {
+        const result = await search({ q: query, skip: 0, take: 1 });
+        expect(result.total).toBe(1);
+        expect(result.rows).toHaveLength(1);
+      }
     }
-    expect(
-      await testDb.band.count({ where: { nameEn: { contains: "Μ'S" } } }),
-    ).toBe(0);
-    expect(band.nameEn).toContain("μ");
+    expect((await searchBandsForAdmin({ q: "Μ'S", workId: work.id, skip: 0, take: 5 })).total).toBe(0);
   });
   it("enforces foreign keys, cascades and generated ids / RETURNING", async () => {
     const { input, live } = await fixture();

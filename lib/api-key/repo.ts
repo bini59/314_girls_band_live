@@ -5,6 +5,7 @@
  */
 import type { ApiKey } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { generateApiKey } from "./hash";
 
@@ -35,10 +36,7 @@ export async function searchApiKeys(options: {
 }): Promise<{ rows: ApiKey[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { name: { contains: options.q } },
-          { keyPrefix: { contains: options.q } },
-        ],
+        id: { in: await searchIds("api_key", options.q) },
       }
     : {};
 

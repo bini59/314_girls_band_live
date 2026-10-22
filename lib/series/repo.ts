@@ -6,6 +6,7 @@
  */
 import type { Series } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
@@ -28,12 +29,7 @@ export async function searchSeries(options: {
 }): Promise<{ rows: Series[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { slug: { contains: options.q } },
-          { nameKo: { contains: options.q } },
-          { nameJp: { contains: options.q } },
-          { nameEn: { contains: options.q } },
-        ],
+        id: { in: await searchIds("series", options.q) },
       }
     : {};
 

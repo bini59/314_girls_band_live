@@ -7,6 +7,7 @@
  */
 import type { Vendor } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
@@ -29,10 +30,7 @@ export async function searchVendors(options: {
 }): Promise<{ rows: Vendor[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { slug: { contains: options.q } },
-          { name: { contains: options.q } },
-        ],
+        id: { in: await searchIds("vendor", options.q) },
       }
     : {};
 

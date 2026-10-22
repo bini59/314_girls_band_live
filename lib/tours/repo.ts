@@ -10,6 +10,7 @@
  */
 import type { Prisma, Tour, TourStatus, Work } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
 
@@ -42,12 +43,7 @@ export async function searchTours(options: {
 }): Promise<{ rows: TourWithCounts[]; total: number }> {
   const where = options.q
     ? {
-        OR: [
-          { slug: { contains: options.q } },
-          { nameKo: { contains: options.q } },
-          { nameJp: { contains: options.q } },
-          { nameEn: { contains: options.q } },
-        ],
+        id: { in: await searchIds("tour", options.q) },
       }
     : {};
 

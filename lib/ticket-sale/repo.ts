@@ -102,8 +102,8 @@ export async function createTicketSale(
     now,
     now,
   ];
-  // Both statements run in the same D1 batch transaction. The single link INSERT
-  // reads the sale's connection-local last_insert_rowid() for every linked tier.
+  // Materialize the sale ID before link inserts can change last_insert_rowid().
+  // Both statements remain in one atomic D1 batch.
   const writes = [
     statement(
       `INSERT INTO ticket_sale (${columns.join(",")}) VALUES (${columns.map(() => "?").join(",")}) RETURNING id`,
@@ -113,7 +113,7 @@ export async function createTicketSale(
   if (input.tierIds.length) {
     writes.push(
       statement(
-        `INSERT INTO ticket_sale_tier (sale_id,tier_id) SELECT last_insert_rowid(), value FROM json_each(?)`,
+        `WITH sale AS MATERIALIZED (SELECT last_insert_rowid() AS id) INSERT INTO ticket_sale_tier (sale_id,tier_id) SELECT sale.id, value FROM sale CROSS JOIN json_each(?)`,
         [JSON.stringify(input.tierIds)],
       ),
     );

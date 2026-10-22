@@ -14,6 +14,7 @@
 import type { Band, Work } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 
+import { searchIds } from "@/lib/search";
 import { prisma } from "@/lib/db";
 import { ConflictError } from "@/lib/errors";
 import { getPrismaErrorCode } from "@/lib/prisma-errors";
@@ -25,7 +26,7 @@ const MAX_SEARCH_LIMIT = 50;
 
 /**
  * 다국어 + slug 부분 일치 검색.
- *  - SQLite LIKE: ASCII case-insensitive, non-ASCII case-sensitive.
+ *  - Unicode 대소문자를 정규화한 부분 일치 검색.
  *  - 빈/공백 query → [] (전체 row 노출 방지).
  *  - limit 은 MAX_SEARCH_LIMIT (50) 으로 clamp.
  */
@@ -41,12 +42,7 @@ export async function searchBands(
 
   return prisma.band.findMany({
     where: {
-      OR: [
-        { nameKo: { contains: trimmed } },
-        { nameJp: { contains: trimmed } },
-        { nameEn: { contains: trimmed } },
-        { slug: { contains: trimmed } },
-      ],
+      id: { in: await searchIds("band", trimmed) },
     },
     take: safeLimit,
     orderBy: { id: "asc" },
@@ -109,12 +105,7 @@ export async function searchBandsForAdmin(options: {
     ...(options.workId !== undefined ? { workId: options.workId } : {}),
     ...(options.q
       ? {
-          OR: [
-            { slug: { contains: options.q } },
-            { nameKo: { contains: options.q } },
-            { nameJp: { contains: options.q } },
-            { nameEn: { contains: options.q } },
-          ],
+          id: { in: await searchIds("band", options.q) },
         }
       : {}),
   };
