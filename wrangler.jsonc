@@ -10,11 +10,14 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "routes": [
+    { "pattern": "band-live.bini59.dev/*", "zone_name": "bini59.dev" }
+  ],
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "girls-band-live",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "f9121d39-17f1-49dc-bce3-e2c85e5edbda",
       "migrations_dir": "prisma/migrations"
     }
   ],

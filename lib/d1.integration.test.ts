@@ -63,6 +63,15 @@ describe("D1 batch atomicity", () => {
     expect(await testDb.ticketSale.count()).toBe(2);
     expect(await testDb.ticketSaleTier.count()).toBe(4);
   });
+  it("stores batch-written dates so Prisma date filters find them", async () => {
+    const { input } = await fixture();
+    const sale = await createTicketSale(input);
+    const found = await testDb.ticketSale.findMany({
+      where: { startsAt: { gte: new Date("2026-09-30T00:00:00Z") } },
+    });
+    expect(found.map((s) => s.id)).toEqual([sale.id]);
+    expect(found[0].startsAt.toISOString()).toBe("2026-10-01T09:00:00.000Z");
+  });
   it("rolls back the sale insert when its link statement fails", async () => {
     const { input, tiers } = await fixture();
     await expect(

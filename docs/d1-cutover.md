@@ -40,7 +40,9 @@ Worker: `pnpm build:worker`, `pnpm test:worker` (임시 로컬 D1).
 Prisma 7의 `prisma-client`는 enum을 TS 타입/상수로 유지하며 SQLite에는 TEXT로 저장한다.
 초기 SQL의 JSON 컬럼은 Prisma가 생성한 JSONB 별칭 대신 TEXT affinity를 명시했다.
 JSON은 JSON 텍스트로 저장하며 `Prisma.DbNull`과 `Prisma.JsonNull`을 구분한다.
-UTC 날짜는 Prisma D1 어댑터와 직접 SQL 모두 epoch milliseconds를 사용한다. UI는 JST 유지.
+UTC 날짜는 Prisma D1 어댑터가 바인딩하는 ISO 텍스트(`2026-10-01T09:00:00.000+00:00`)로 저장한다.
+직접 SQL(`lib/d1.ts`)과 import도 같은 형식을 쓴다. SQLite는 정수와 텍스트를 비교하면 항상 정수가 작다고 보므로
+epoch 정수가 섞이면 Prisma의 날짜 범위 조회에서 해당 행이 빠진다. UI는 JST 유지.
 SQLite LIKE는 비 ASCII 대소문자를 접지 않으므로 검색은 `lib/search.ts`에서 NFC 정규화와 Unicode 소문자 변환으로 일치 ID를 구한다. 이 ID 조건에 기존 필터·정렬·페이지네이션·count를 적용한다. 검색 시 해당 테이블의 ID와 검색 문자열 컬럼을 읽으므로 데이터 증가 시 정규화 검색 인덱스를 검토한다.
 앱에서 jsonb 연산자, PG 배열, raw RETURNING 의존은 없었다. D1 INSERT RETURNING과 FK/cascade는 테스트한다.
 

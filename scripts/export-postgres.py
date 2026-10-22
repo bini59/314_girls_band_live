@@ -24,7 +24,7 @@ def quote(value):
 def convert(snapshot):
     if set(snapshot) != set(TABLES):
         raise ValueError("snapshot must contain exactly all domain tables")
-    lines = ["-- Import into an EMPTY migrated D1 database. UTC dates are epoch milliseconds.", "PRAGMA defer_foreign_keys = ON;"]
+    lines = ["-- Import into an EMPTY migrated D1 database. UTC dates are Prisma D1 adapter text (ISO, +00:00).", "PRAGMA defer_foreign_keys = ON;"]
     for table in TABLES:
         for row in snapshot[table]:
             values = []
@@ -38,7 +38,7 @@ def convert(snapshot):
                     date = datetime.datetime.fromisoformat(value.replace("Z", "+00:00"))
                     if date.tzinfo is None:
                         date = date.replace(tzinfo=datetime.timezone.utc)
-                    value = int(date.timestamp() * 1000)
+                    value = date.astimezone(datetime.timezone.utc).isoformat(timespec="milliseconds")
                 if not column.endswith("__sql_null"):
                     values.append((column, quote(value)))
             columns = ",".join('"' + c + '"' for c, _ in values)

@@ -7,8 +7,9 @@ export function statement(
   return getDb()
     .prepare(sql)
     .bind(
+      // Same text the Prisma D1 adapter binds; SQLite never matches an integer against a text date.
       ...values.map((value) =>
-        value instanceof Date ? value.getTime() : value,
+        value instanceof Date ? value.toISOString().replace("Z", "+00:00") : value,
       ),
     );
 }
