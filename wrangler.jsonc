@@ -3,7 +3,20 @@
   "name": "girls-band-live",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-10-21",
-  "compatibility_flags": ["nodejs_compat"],
-  "assets": { "directory": ".open-next/assets", "binding": "ASSETS" },
-  "d1_databases": [{ "binding": "DB", "database_name": "girls-band-live", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "prisma/migrations" }]
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "girls-band-live",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "prisma/migrations"
+    }
+  ],
+  "minify": true
 }

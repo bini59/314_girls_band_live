@@ -1,12 +1,40 @@
+import path from "node:path";
 import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 initOpenNextCloudflareForDev();
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  webpack(config) {
-    config.experiments = { ...config.experiments, asyncWebAssembly: true };
-    config.module.rules.push({ test: /\.wasm$/, type: "webassembly/async" });
+  webpack(config, { isServer, dev, webpack }) {
+    if (dev) {
+      // next dev runs in Node, using the same schema/D1 adapter with Node's
+      // generated compiler loader instead of the Worker-only Wasm module import.
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(
+          /generated[\\/]prisma[\\/]client(?:\.ts)?$/,
+          path.resolve("generated/prisma-node/client.ts"),
+        ),
+      );
+    } else if (isServer) {
+      // Keep Prisma's Worker Wasm import for OpenNext/Wrangler. Webpack's Wasm
+      // loader reads /bundle/static/wasm through fs, which cannot work in Workers.
+      config.externals.push(
+        (
+          { context, request }: { context?: string; request?: string },
+          callback: (
+            error?: Error | null,
+            result?: string,
+            type?: string,
+          ) => void,
+        ) => {
+          if (context && request?.endsWith(".wasm?module")) {
+            callback(null, path.resolve(context, request), "import");
+          } else {
+            callback();
+          }
+        },
+      );
+    }
     return config;
   },
   // OpenNext consumes the standalone Next build.

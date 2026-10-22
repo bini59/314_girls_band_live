@@ -4,17 +4,25 @@
 `database_id`는 자리표시자이며, 기존 Docker 배포와 Workers 배포는 모두 수동 실행이다.
 운영 Postgres와 기존 이미지는 롤백 기간 동안 보존한다. D1 초기 마이그레이션을 Postgres에 적용하지 않는다.
 
-## 현재 차단 사항
+## Worker Wasm 번들링과 검증
 
-로컬 Worker에서 `/api/health`는 200이지만 `/`는 500이다.
-Prisma의 첫 DB 조회가 `ENOENT: no such file or directory, readAll '/bundle/static/wasm/dc9815134bfbc69a.wasm'`로 실패한다.
-Next webpack이 Prisma 7의 query compiler Wasm을 파일 로더로 묶어 Workers 런타임에서 찾지 못한다.
-타입 검사/로컬 D1 테스트 통과와 별개로 실제 서비스 전환은 이 문제가 해결될 때까지 차단한다.
-E2E 검증도 완료하지 않았다. 아래 runbook은 차단 해소 후 운영자가 수행한다.
+Prisma의 query compiler Wasm을 webpack의 일반 Wasm 로더로 처리하면 Node `fs`로
+`/bundle/static/wasm/...`을 읽게 되어 Worker의 첫 DB 요청이 ENOENT로 실패한다.
+production 서버 빌드에서는 `.wasm?module` import를 webpack external import로 유지한다.
+OpenNext가 이 경로를 Wrangler에 넘기고, Wrangler가 Wasm을 Worker 모듈로 포함한다.
+Node에서 실행하는 `next dev`는 동일 스키마의 Node용 생성 클라이언트로 치환한다. D1 adapter와 로컬 D1 바인딩은 동일하다.
+Node용 생성 클라이언트는 Playwright의 CommonJS 로더와 호환되도록 `moduleFormat = "cjs"`로 생성한다.
+Next 15 / Prisma 7 / OpenNext 버전은 그대로 유지한다.
 
-측정: `wrangler deploy --dry-run`에서 9499.86 KiB (gzip 2086.90 KiB, 약 2.04 MiB).
-무료 3 MB / 유료 10 MB gzip 한도 이내다. 빌드 산출물만 측정했으며 업로드하지 않았다.
-Prisma 7.8.0 / Next 15.5.28 / OpenNext 1.14.8로 재현했다.
+`pnpm test:worker`는 임시 디렉터리의 로컬 D1에 마이그레이션과 fixture를 적용하고 빌드된 Worker를 실행한다.
+홈페이지·상세 반복 조회, 인증된 API 생성/수정/조회, UTC 날짜 round trip을 검증한다.
+테스트 후 Worker와 임시 DB를 삭제하며 개발 DB나 운영 리소스에 접근하지 않는다. CI에서도 같은 검증을 수행한다.
+
+측정: minify를 켠 `wrangler deploy --dry-run`에서 9682.35 KiB (gzip 2939.33 KiB, 약 2.87 MiB).
+무료 3 MiB / 유료 10 MiB gzip 한도 이내다. 빌드 산출물만 측정했으며 업로드하지 않았다.
+이전 2086.90 KiB 측정치는 Wasm이 빠진 불완전한 번들이었다. `wrangler.jsonc`의 `minify: true`를 유지한다.
+
+Prisma 7.8.0 / Next 15.5.28 / OpenNext 1.14.8을 사용한다.
 최신 OpenNext 1.20.12는 Next 15 지원 종료 검사로 빌드를 거부해 Next 15 호환 버전으로 고정했다.
 ARM64 빌드에서 ast-grep 0.40.0의 `le16toh` 심볼 로딩 오류가 있어 0.41.0으로 override했다.
 Prisma CLI diff는 명시적 로컬 datasource URL이 없을 때 SQL 없이 종료하므로 CLI 설정에 사용하지 않는 file URL을 명시했다.
@@ -25,7 +33,8 @@ Node 22.12+ / pnpm 9. `pnpm install`, `pnpm prisma:generate`, `pnpm prisma:migra
 DB는 `.wrangler/state`의 로컬 D1이다. `DATABASE_URL`과 Docker DB는 사용하지 않는다.
 `pnpm test:run`은 Miniflare/workerd D1을 테스트 파일마다 새로 만들고 SQL 마이그레이션을 적용한다.
 `pnpm typecheck`, `pnpm lint`, `pnpm test:run`, `python3 scripts/export-postgres.test.py`.
-Worker: `pnpm build:worker`, `pnpm exec wrangler dev --local`.
+Worker: `pnpm build:worker`, `pnpm test:worker` (임시 로컬 D1).
+개발 DB로 수동 확인: `pnpm exec wrangler dev --local`.
 번들 측정만: `pnpm exec wrangler deploy --dry-run --outdir .wrangler/dry-run` (업로드하지 않음).
 
 Prisma 7의 `prisma-client`는 enum을 TS 타입/상수로 유지하며 SQLite에는 TEXT로 저장한다.
@@ -35,6 +44,14 @@ UTC 날짜는 Prisma D1 어댑터와 직접 SQL 모두 epoch milliseconds를 사
 SQLite LIKE는 ASCII 대소문자는 무시하지만 `Μ`와 `μ`는 구분한다. 일본어/한국어 검색은 그대로다.
 Postgres ILIKE의 비 ASCII 대소문자 접기와 차이가 있으며 호환 테스트로 명시했다.
 앱에서 jsonb 연산자, PG 배열, raw RETURNING 의존은 없었다. D1 INSERT RETURNING과 FK/cascade는 테스트한다.
+
+## 브라우저 E2E 결과
+
+전체 `pnpm test:e2e` 실행은 8 passed / 9 failed / 3 skipped였다.
+실패는 중복 heading/text locator, Playwright에 없는 `getByDisplayValue`, `selectOption` 인수,
+테스트 간 잔여 데이터에 대한 빈 목록 기대, 메뉴/상태 문자열 기대 등이다.
+Wasm 로딩 오류와 개발 서버 기동 문제는 해결했지만 전체 UI E2E가 green인 상태는 아니다.
+Worker DB 스모크와 D1 원자성 통합 테스트는 별도로 검증하며, 운영 전환 전 UI 수동 확인은 아래 runbook을 따른다.
 
 ## 원자적 쓰기
 

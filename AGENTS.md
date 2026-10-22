@@ -14,6 +14,7 @@
 - 검증: `pnpm typecheck`, `pnpm lint`, `pnpm test:run` (husky pre-commit이 같은 순서로 실행. 우회는 `--no-verify`).
 - 통합 테스트 DB: Vitest가 ephemeral Miniflare D1을 생성한다. 개발 DB는 `pnpm prisma:migrate` (`--local`).
 - E2E: `pnpm test:e2e`.
+- Worker 번들 변경 후: `pnpm build:worker` → `pnpm test:worker` (임시 로컬 D1로 실제 DB 요청 검증).
 - 스키마 변경 후: `prisma migrate diff`로 D1 SQL 생성 → `pnpm prisma:migrate` (`--local`) → `pnpm prisma:generate`.
 
 ## 브랜치 / 릴리즈

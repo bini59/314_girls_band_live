@@ -30,6 +30,7 @@ generator tooling {
   provider = "prisma-client"
   output = "../generated/prisma-node"
   runtime = "nodejs"
+  moduleFormat = "cjs"
 }
 
 datasource db {

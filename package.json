@@ -2,7 +2,7 @@
   "name": "girls-band-live",
   "version": "0.7.0",
   "private": true,
-  "description": "\uc560\ub2c8/\uac8c\uc784 \uae30\ubc18 \uac78\uc988\ubc34\ub4dc \ub77c\uc774\ube0c \uc77c\uc815 \uc544\uce74\uc774\ube0c",
+  "description": "애니/게임 기반 걸즈밴드 라이브 일정 아카이브",
   "packageManager": "pnpm@9.12.0",
   "engines": {
     "node": ">=22.12"
@@ -24,7 +24,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "build:worker": "opennextjs-cloudflare build",
     "preview": "opennextjs-cloudflare preview",
-    "typegen": "wrangler types"
+    "typegen": "wrangler types",
+    "test:worker": "tsx scripts/smoke-worker.ts"
   },
   "dependencies": {
     "@bini59/design": "github:bini59/324_bini59_design#cb24cb4",

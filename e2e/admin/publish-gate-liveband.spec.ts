@@ -23,7 +23,7 @@ const WORK_SLUG = `gate-test-work-${TS}`;
 
 let prisma: PrismaClient;
 
-test.beforeAll(() => {
+test.beforeAll(async () => {
   prisma = await localDb();
 });
 

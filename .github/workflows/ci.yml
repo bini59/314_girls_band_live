@@ -70,3 +70,21 @@ jobs:
 
       - name: Test offline export conversion
         run: python3 scripts/export-postgres.test.py
+
+  worker:
+    name: Built Worker + local D1 smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.12.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma:generate
+      - run: pnpm build:worker
+      - run: pnpm test:worker

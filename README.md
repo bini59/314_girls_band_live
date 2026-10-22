@@ -21,7 +21,8 @@ pnpm dev
 
 `pnpm test:run`은 별도 ephemeral workerd D1에서 unit/integration 테스트를 실행한다.
 Docker / TEST_DATABASE_URL 설정은 필요하지 않다.
-`pnpm build:worker` → `pnpm exec wrangler dev --local`로 Worker를 검증한다.
+`pnpm build:worker` → `pnpm test:worker`로 빌드된 Worker와 임시 D1의 실제 DB 요청을 검증한다.
+`pnpm exec wrangler dev --local`로 개발 DB를 사용하는 Worker를 수동 확인할 수 있다.
 [전환 절차와 롤백](docs/d1-cutover.md)을 참고한다. 리소스 생성과 운영 데이터 이전은 운영자가 수행한다.
 
 ## 어드민 인증
